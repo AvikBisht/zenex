@@ -231,6 +231,22 @@
 
   .shortcut-hint{font-size:10.5px;color:var(--ink-faint);text-align:center;margin-top:8px;}
   kbd{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px;}
+
+  /* ---------- Session history table ---------- */
+  .history-card{margin:18px 28px 40px;}
+  .history-table-wrap{overflow-x:auto;}
+  table.history-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.history-table th{
+    text-align:left;font-size:11px;font-weight:600;color:var(--ink-faint);
+    padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  table.history-table td{
+    padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  table.history-table tbody tr:hover{background:var(--bg);}
+  table.history-table tbody tr:last-child td{border-bottom:none;}
+  .hist-empty{padding:22px 10px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-family:'IBM Plex Sans',sans-serif;}
 </style>
 </head>
 <body>
@@ -375,6 +391,22 @@
 
 </div>
 
+<div class="card card-pad history-card">
+  <p class="card-title">Companies checked this session</p>
+  <div class="history-table-wrap">
+    <table class="history-table" id="historyTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Time</th><th>Ticker</th><th>Company</th><th>Risk profile</th><th>Horizon</th>
+          <th>Result</th><th>Score</th><th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+    <div class="hist-empty" id="historyEmpty">No companies checked yet — run an analysis to start building this log.</div>
+  </div>
+</div>
+
 <div class="toast-stack" id="toastStack"></div>
 
 <script>
@@ -444,6 +476,7 @@ let state = {
   watchlist: ["RELIANCE.NS","TCS.NS","AAPL","MSFT","TSLA","HDFCBANK.NS"],
   days: 30,
   sessionCount: 0,
+  history: [],
 };
 
 /* Seeded PRNG (mulberry32) so results are deterministic per ticker */
@@ -548,18 +581,30 @@ function runRiskAgent(ticker, degraded){
   };
 }
 
+/* Per-risk-profile thresholds: conservative investors need a stronger, more unanimous
+   signal before a BUY/SELL call is issued (and treat any meaningful disagreement between
+   agents as a reason to hold); aggressive investors act on thinner edges and tolerate more
+   disagreement between agents. This is what makes the same underlying agent output translate
+   into different recommendations for different risk profiles. */
+const RISK_THRESHOLDS = {
+  Conservative: {strongBuy:0.55, buy:0.30, sell:-0.30, strongSell:-0.60, conflict:0.25},
+  Moderate:     {strongBuy:0.40, buy:0.15, sell:-0.15, strongSell:-0.40, conflict:0.32},
+  Aggressive:   {strongBuy:0.28, buy:0.08, sell:-0.08, strongSell:-0.25, conflict:0.42},
+};
+
 function synthesize(results, risk, horizon){
   const w = RISK_WEIGHTS[risk];
+  const th = RISK_THRESHOLDS[risk];
   const weighted = results.momentum.score*w.momentum + results.sentiment.score*w.sentiment + results.rag.score*w.rag + results.risk.score*w.risk;
   let avgConf = results.momentum.confidence*w.momentum + results.sentiment.confidence*w.sentiment + results.rag.confidence*w.rag + results.risk.confidence*w.risk;
   const scores = [results.momentum.score, results.sentiment.score, results.rag.score, results.risk.score];
-  const conflicting = Math.max(...scores) > 0.25 && Math.min(...scores) < -0.25;
+  const conflicting = Math.max(...scores) > th.conflict && Math.min(...scores) < -th.conflict;
   let label;
   if (conflicting){ label = "HOLD (conflicting signals)"; avgConf *= 0.6; }
-  else if (weighted > 0.4) label = "STRONG BUY";
-  else if (weighted > 0.15) label = "BUY";
-  else if (weighted < -0.4) label = "STRONG SELL";
-  else if (weighted < -0.15) label = "SELL";
+  else if (weighted > th.strongBuy) label = "STRONG BUY";
+  else if (weighted > th.buy) label = "BUY";
+  else if (weighted < th.strongSell) label = "STRONG SELL";
+  else if (weighted < th.sell) label = "SELL";
   else label = "HOLD";
   const citations = [results.momentum.source, results.sentiment.source, results.rag.source].filter(s=>s && s!=="degraded-feed");
   return { label, score:+weighted.toFixed(2), confidence:+Math.min(0.95, Math.max(0.05, avgConf)).toFixed(2), conflicting, citations };
@@ -891,6 +936,28 @@ function renderPortfolio(){
   document.getElementById("portConc").textContent = Math.round(conc*100)+"%";
 }
 
+function renderHistoryTable(){
+  const table = document.getElementById("historyTable");
+  const body = document.getElementById("historyBody");
+  const empty = document.getElementById("historyEmpty");
+  if (!state.history.length){ table.style.display = "none"; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  table.style.display = "table";
+  body.innerHTML = state.history.map(h=>{
+    const cls = sigClass(h.score, false);
+    return `<tr>
+      <td>${h.time}</td>
+      <td>${h.ticker.replace(/\.(NS|PA|T)$/,"")}</td>
+      <td style="font-family:'IBM Plex Sans',sans-serif;">${h.company}</td>
+      <td>${h.risk}</td>
+      <td>${h.horizon}</td>
+      <td><span class="agent-signal ${cls}">${h.label}</span></td>
+      <td>${h.score>=0?"+":""}${h.score}</td>
+      <td>${Math.round(h.confidence*100)}%</td>
+    </tr>`;
+  }).join("");
+}
+
 let lastResults = null, lastSynth = null, lastPrices = null, lastFigures = null;
 
 function setLoading(on){
@@ -929,6 +996,20 @@ function runAnalysis(){
     renderStatStrip(synth, figures, latencyMs, c.risk, c.cur);
     renderFuture(results, synth, figures, lastPrice, c.cur);
     appendTrace(results, synth, latencyMs);
+
+    state.history.unshift({
+      time: new Date().toLocaleTimeString(),
+      ticker: state.ticker,
+      company: c.n || state.ticker,
+      risk: state.risk,
+      horizon: state.horizon,
+      label: synth.label,
+      score: synth.score,
+      confidence: synth.confidence,
+    });
+    if (state.history.length > 40) state.history.pop();
+    renderHistoryTable();
+
     setLoading(false);
   }, 260);
 }
