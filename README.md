@@ -18,7 +18,7 @@ Technical • Sentiment • Fundamentals • Risk
       ↓
 🧠 AI Signal Synthesis
       ↓
-🟢 BUY  |  🟡 HOLD  |  🔴 SELL
+🟢 BUY  |  🔵 HOLD  |  🔴 SELL
 
 The recommendation considers risk profile, investment horizon, confidence, and conflicting signals.
 
