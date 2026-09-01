@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Desk Enterprise - Multi-Agent Investment Intelligence</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Corporate Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --panel-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-subtle: #94a3b8;
+
+            /* Formal Financial Color Palette */
+            --gain-green: #16a34a;
+            --gain-bg: #f0fdf4;
+            --gain-border: #bbf7d0;
+
+            --risk-red: #dc2626;
+            --risk-bg: #fef2f2;
+            --risk-border: #fecaca;
+
+            --hold-amber: #d97706;
+            --hold-bg: #fffbebfb;
+            --hold-border: #fde68a;
+
+            --brand-blue: #2563eb;
+            --brand-bg: #eff6ff;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-canvas); }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* Left Control Panel */
+        .sidebar {
+            width: 360px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .brand-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo {
+            width: 36px; height: 36px;
+            background: var(--brand-blue);
+            color: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-title {
+            font-size: 1.15rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em;
+        }
+        .brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+
+        .form-section { display: flex; flex-direction: column; gap: 6px; }
+        .form-section label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .search-box-container { position: relative; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; }
+
+        input[type="text"], select {
+            width: 100%; padding: 10px 12px 10px 36px; border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #ffffff; color: var(--text-main);
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select { padding-left: 12px; cursor: pointer; }
+
+        input:focus, select:focus {
+            border-color: var(--brand-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .quick-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+        .chip {
+            font-size: 0.72rem; font-weight: 500; padding: 4px 8px;
+            background: var(--bg-canvas); border: 1px solid var(--border-color);
+            border-radius: 4px; color: var(--text-muted); cursor: pointer;
+            transition: 0.2s;
+        }
+        .chip:hover { border-color: var(--brand-blue); color: var(--brand-blue); background: var(--brand-bg); }
+
+        .btn-action {
+            background: var(--brand-blue); color: white; border: none;
+            padding: 12px; border-radius: 6px; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: 0.2s; width: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-action:hover { background: #1d4ed8; }
+        .btn-action:disabled { background: var(--border-color); color: var(--text-subtle); cursor: not-allowed; }
+
+        .checkbox-group {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            border-radius: 6px; background: var(--risk-bg); border: 1px solid var(--risk-border);
+            font-size: 0.8rem; color: var(--risk-red); font-weight: 500;
+        }
+
+        .watchlist-box { display: flex; flex-direction: column; gap: 6px; }
+        .watchlist-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; background: #ffffff; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.82rem; font-weight: 500; cursor: pointer;
+            transition: 0.2s;
+        }
+        .watchlist-item:hover { border-color: var(--brand-blue); background: var(--bg-canvas); }
+
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Header Overview Cards */
+        .header-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+        .stat-card {
+            background: var(--panel-bg); padding: 16px; border-radius: 8px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .stat-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--text-main); font-family: 'Inter', sans-serif; }
+
+        /* Multi-Agent Cards Grid */
+        .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        
+        .agent-card {
+            background: var(--panel-bg); border-radius: 8px; padding: 20px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        
+        .agent-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .agent-title { font-size: 0.92rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .agent-status { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
+
+        /* Formal Badges */
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 4px;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .badge-buy { background: var(--gain-bg); color: var(--gain-green); border: 1px solid var(--gain-border); }
+        .badge-sell { background: var(--risk-bg); color: var(--risk-red); border: 1px solid var(--risk-border); }
+        .badge-hold { background: var(--hold-bg); color: var(--hold-amber); border: 1px solid var(--hold-border); }
+        .badge-neutral { background: var(--bg-canvas); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+        .agent-reasoning { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; min-height: 40px; }
+        .citation { padding: 10px 12px; background: var(--bg-canvas); border-left: 3px solid var(--brand-blue); font-size: 0.78rem; color: var(--text-muted); border-radius: 0 4px 4px 0; }
+
+        .chart-box { position: relative; height: 160px; width: 100%; margin-top: 4px; }
+
+        /* Executive Decision & Projection Section */
+        .synthesis-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 20px; }
+        
+        .synthesis-card {
+            background: #ffffff; border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px; box-shadow: var(--shadow-md);
+            display: flex; flex-direction: column; gap: 14px;
+        }
+
+        .output-hud {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;
+            background: var(--bg-canvas); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);
+        }
+        .output-hud .item label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .output-hud .item span { font-size: 0.95rem; font-weight: 700; color: var(--text-main); display: block; margin-top: 2px; }
+
+        .future-aspects-card {
+            background: var(--panel-bg); border-radius: 8px; padding: 20px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        /* Logs Console */
+        .logs-panel { 
+            background: #0f172a; padding: 12px 16px; border-radius: 6px; 
+            font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #38bdf8;
+            height: 90px; overflow-y: auto; line-height: 1.6;
+        }
+
+        .text-green { color: var(--gain-green) !important; }
+        .text-red { color: var(--risk-red) !important; }
+        .text-amber { color: var(--hold-amber) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: Controls & Asset Filter -->
+    <div class="sidebar">
+        <div class="brand-header">
+            <div class="brand-logo"><i class="fas fa-chart-pie"></i></div>
+            <div>
+                <div class="brand-title">Oracle Desk</div>
+                <div class="brand-subtitle">Enterprise Investment Intelligence</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <label>Search Global Asset (5,000+ Index)</label>
+            <div class="search-box-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="tickerSearchInput" placeholder="Enter Company Name or Ticker..." list="globalStockDatalist" onchange="handleStockSelect(this.value)">
+                <datalist id="globalStockDatalist"></datalist>
+            </div>
+            <div class="quick-chips">
+                <span class="chip" onclick="quickSelect('NVDA')">NVDA</span>
+                <span class="chip" onclick="quickSelect('AAPL')">AAPL</span>
+                <span class="chip" onclick="quickSelect('RELIANCE')">RELIANCE</span>
+                <span class="chip" onclick="quickSelect('TSLA')">TSLA (Falling)</span>
+                <span class="chip" onclick="quickSelect('LVMH')">LVMH (Hold)</span>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <label>Institutional Risk Profile</label>
+            <select id="profileInput">
+                <option value="conservative">Conservative (Capital Preservation)</option>
+                <option value="moderate" selected>Moderate (Risk-Balanced)</option>
+                <option value="aggressive">Aggressive (Alpha / Momentum Growth)</option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label>Investment Horizon Target</label>
+            <select id="horizonInput">
+                <option value="intraday">Intraday Trading</option>
+                <option value="swing" selected>30-Day Position Horizon</option>
+                <option value="longterm">Multi-Quarter Portfolio Hold</option>
+            </select>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="degradedInput">
+            <label for="degradedInput">Simulate Exchange Feed Outage</label>
+        </div>
+
+        <button class="btn-action" id="runBtn" onclick="executeOrchestrator()">
+            <i class="fas fa-play"></i> Run Intelligence Assessment
+        </button>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color);">
+
+        <div class="form-section">
+            <label>Global Watchlist Overview</label>
+            <div class="watchlist-box">
+                <div class="watchlist-item" onclick="quickSelect('NVDA')">
+                    <span>NVDA [NASDAQ]</span> <span class="badge badge-buy">+3.8%</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('LVMH')">
+                    <span>LVMH [EURONEXT]</span> <span class="badge badge-hold">HOLD (+0.2%)</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('TSLA')">
+                    <span>TSLA [NASDAQ]</span> <span class="badge badge-sell">RISK (-4.5%)</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('HDFCBANK')">
+                    <span>HDFCBANK [NSE]</span> <span class="badge badge-hold">HOLD (-0.3%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="main-content">
+        
+        <!-- Header Key Metric Cards -->
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-label">Execution Latency</div>
+                <div class="stat-val" id="latencyMetric">-- ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Asset Risk Exposure</div>
+                <div class="stat-val text-red" id="riskPercentMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Model Confidence</div>
+                <div class="stat-val text-green" id="confMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Projected 30D Return</div>
+                <div class="stat-val" id="roiMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Target / Stop Loss</div>
+                <div class="stat-val" style="font-size: 0.95rem; line-height:1.3;" id="targetStopMetric">T: --<br>S: --</div>
+            </div>
+        </div>
+
+        <!-- 4 Multi-Agent Intelligence Cards Grid -->
+        <div class="agent-grid">
+            
+            <!-- Agent 1: Technical Dynamics -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-chart-line" style="color:var(--brand-blue);"></i> Technical Agent</div>
+                    <div class="agent-status" id="statusTech">Idle</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge badge-neutral" id="sigTech">PENDING</span>
+                    <span style="font-size:0.78rem; color:var(--text-muted); font-weight: 600;" id="techEmaVal">EMA50: --</span>
+                </div>
+                <div class="agent-reasoning" id="reasonTech">Awaiting data stream execution...</div>
+                <div class="chart-box">
+                    <canvas id="techChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 2: Fundamental Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-file-invoice" style="color:var(--brand-blue);"></i> Fundamental (RAG) Agent</div>
+                    <div class="agent-status" id="statusFund">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-neutral" id="sigFund">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonFund">Awaiting SEC/Regulatory document indexing...</div>
+                <div class="citation" id="citeFund" style="display: none;">
+                    <i class="fas fa-quote-left" style="margin-right: 4px;"></i> <span id="citeText"></span>
+                </div>
+            </div>
+
+            <!-- Agent 3: Sentiment & Capital Flow Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-building-columns" style="color:var(--brand-blue);"></i> Institutional Capital Flow</div>
+                    <div class="agent-status" id="statusSent">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-neutral" id="sigSent">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonSent">Awaiting institutional flow allocation metrics...</div>
+                <div class="chart-box">
+                    <canvas id="flowChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 4: Risk Profiler -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-shield-cat" style="color:var(--brand-blue);"></i> Multi-Factor Risk Assessment</div>
+                    <div class="agent-status" id="statusRisk">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-hold" id="sigRisk">PROFILE: UNSET</span>
+                </div>
+                <div class="agent-reasoning" id="reasonRisk">Evaluating portfolio concentration and volatility metrics...</div>
+                <div class="chart-box">
+                    <canvas id="riskRadarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Synthesis & Projection Section -->
+        <div class="synthesis-grid">
+            
+            <!-- Synthesis Card -->
+            <div class="synthesis-card">
+                <div class="agent-header">
+                    <div class="agent-title" style="font-size: 1rem;"><i class="fas fa-microchip" style="color:var(--brand-blue);"></i> Executive Synthesis Output</div>
+                    <div class="agent-status" id="statusSynth">Awaiting Agents</div>
+                </div>
+                
+                <div style="text-align: center; margin: 4px 0;">
+                    <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Actionable Decision</span>
+                    <h2 id="finalRec" style="font-size: 2.2rem; color: var(--text-muted); margin-top:2px;">STANDBY</h2>
+                </div>
+
+                <div class="output-hud">
+                    <div class="item">
+                        <label>Asset Ticker</label>
+                        <span id="outTicker">NVDA</span>
+                    </div>
+                    <div class="item">
+                        <label>Exchange</label>
+                        <span id="outExchange">NASDAQ</span>
+                    </div>
+                    <div class="item">
+                        <label>Risk Rating</label>
+                        <span id="outRiskScore" class="text-red">--%</span>
+                    </div>
+                    <div class="item">
+                        <label>Horizon</label>
+                        <span id="outHorizon">30D</span>
+                    </div>
+                </div>
+
+                <div class="agent-reasoning" id="finalReasoning" style="font-size: 0.88rem; border-top:1px solid var(--border-color); padding-top:10px;">
+                    Executive decision summary will render here following multi-agent graph resolution.
+                </div>
+            </div>
+
+            <!-- Future Aspects & Projections -->
+            <div class="future-aspects-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-chart-area" style="color:var(--brand-blue);"></i> Forward Horizon Projections</div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;" id="catalystTag">Catalyst: Pending Engine Run</span>
+                </div>
+                
+                <div class="agent-reasoning" id="futureThesis">
+                    Forward Thesis: Assessing 30-day target paths across Bullish, Base Hold, and Bearish scenarios...
+                </div>
+
+                <div class="chart-box" style="height: 150px;">
+                    <canvas id="futureProjectionChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Real-Time Console Log -->
+        <div class="logs-panel" id="systemLogs">
+            [SYSTEM_INIT] Autonomous Agent Pipeline Online. Global 5,000 Equity Index Loaded.
+        </div>
+
+    </div>
+
+    <script>
+        // Curated Seeds + 5,000 Global Company Generator Engine
+        const seedCompanies = [
+            { t: 'NVDA', n: 'NVIDIA Corporation', e: 'NASDAQ', c: '$', b: 128, ema: 118, r: 38, fundSig: 'CONSTRUCTIVE', fundText: 'Blackwell GPU rack shipments accelerating. Data center revenue grew 112% YoY.', cite: 'SEC Form 10-Q #NVDA-2026-Q2', cat: 'GTC AI Keynote in 6 Days', statusType: 'BUY' },
+            { t: 'AAPL', n: 'Apple Inc.', e: 'NASDAQ', c: '$', b: 225, ema: 218, r: 16, fundSig: 'CONSTRUCTIVE', fundText: 'Apple Intelligence rollout driving high device upgrade cycle in N. America.', cite: 'SEC Form 10-Q #AAPL-2026', cat: 'WWDC Developer Event in 11 Days', statusType: 'BUY' },
+            { t: 'RELIANCE', n: 'Reliance Industries Ltd', e: 'NSE', c: '₹', b: 2980, ema: 2910, r: 22, fundSig: 'CONSTRUCTIVE', fundText: 'Retail EBITDA margins expanded 180bps. Green Energy complex commissioning on schedule.', cite: 'SEBI Disclosure #RIL-2026-Q3', cat: 'Q4 Earnings Call in 12 Days', statusType: 'BUY' },
+            { t: 'TSLA', n: 'Tesla, Inc.', e: 'NASDAQ', c: '$', b: 198, ema: 224, r: 46, fundSig: 'CAUTIONARY', fundText: 'FALLING STOCK ALERT: Automotive gross margin compressed to 14.2%. FSD regulatory delay risks.', cite: 'SEC Form 10-Q #TSLA-2026', cat: 'Robotaxi Regulatory Hearing in 5 Days', statusType: 'FALLING' },
+            { t: 'LVMH', n: 'LVMH Louis Vuitton', e: 'EURONEXT', c: '€', b: 740, ema: 742, r: 20, fundSig: 'NEUTRAL', fundText: 'HOLD CRITERIA MET: Revenue consolidation in APAC market offset by stable European fashion sales.', cite: 'Euronext Annual Report #LVMH-2026', cat: 'Paris Fashion Summit in 15 Days', statusType: 'HOLD' },
+            { t: '7203', n: 'Toyota Motor Corp', e: 'TSE', c: '¥', b: 2650, ema: 2640, r: 18, fundSig: 'NEUTRAL', fundText: 'HOLD CRITERIA MET: Solid hybrid demand balanced by currency fluctuation risks in Western markets.', cite: 'Tokyo Stock Exchange Filing #7203-2026', cat: 'Auto Tech Expo in 8 Days', statusType: 'HOLD' },
+            { t: 'HDFCBANK', n: 'HDFC Bank Limited', e: 'NSE', c: '₹', b: 1640, ema: 1655, r: 28, fundSig: 'CAUTIONARY', fundText: 'HOLD/CONSOLIDATION: Net interest margin remains rangebound following merger integration.', cite: 'SEBI Banking Filing #HDFC-2026', cat: 'RBI Credit Policy Review in 19 Days', statusType: 'HOLD' },
+            { t: 'INTC', n: 'Intel Corporation', e: 'NASDAQ', c: '$', b: 22, ema: 28, r: 52, fundSig: 'CAUTIONARY', fundText: 'FALLING STOCK ALERT: Foundry division operating losses widening. Market share erosion in server CPU.', cite: 'SEC Form 10-K #INTC-2026', cat: 'Foundry Strategy Update in 3 Days', statusType: 'FALLING' }
+        ];
+
+        const globalDatabase = {};
+        const globalListOptions = [];
+
+        function generate5000Database() {
+            seedCompanies.forEach(s => {
+                globalDatabase[s.t.toUpperCase()] = s;
+                globalListOptions.push(`${s.t} - ${s.n} [${s.e}]`);
+            });
+
+            const exchanges = [
+                { e: 'NASDAQ', c: '$' }, { e: 'NYSE', c: '$' }, { e: 'NSE', c: '₹' }, 
+                { e: 'LSE', c: '£' }, { e: 'EURONEXT', c: '€' }, { e: 'TSE', c: '¥' }, { e: 'HKEX', c: 'HK$' }
+            ];
+
+            const prefixes = ['ALPHA', 'GLOBAL', 'NEXUS', 'APEX', 'QUANTUM', 'SOLAR', 'BIO', 'PACIFIC', 'OMEGA', 'STEEL', 'POWER', 'DYNAMIC'];
+            const suffixes = ['TECH', 'CORP', 'PHARMA', 'FINANCE', 'ENERGY', 'MOTORS', 'SYSTEMS', 'HOLDINGS', 'CAPITAL'];
+
+            let count = seedCompanies.length;
+            while(count < 5000) {
+                count++;
+                const ex = exchanges[count % exchanges.length];
+                const pre = prefixes[(count * 3) % prefixes.length];
+                const suf = suffixes[(count * 7) % suffixes.length];
+                const ticker = `${pre.slice(0,3)}${suf.slice(0,3)}${count}`.toUpperCase();
+                const name = `${pre} ${suf} ${count % 2 === 0 ? 'Inc.' : 'Group'}`;
+                
+                const basePrice = Math.floor(((count * 19) % 750) + 20);
+                
+                // Categorize randomly into BUY, HOLD, or FALLING/RISK
+                let statusType = 'HOLD';
+                if(count % 3 === 0) statusType = 'BUY';
+                else if(count % 5 === 0) statusType = 'FALLING';
+
+                const isFalling = statusType === 'FALLING';
+                const isHold = statusType === 'HOLD';
+
+                const ema = isFalling ? Math.floor(basePrice * 1.08) : (isHold ? basePrice : Math.floor(basePrice * 0.94));
+                const riskPct = isFalling ? Math.floor(((count * 13) % 25) + 38) : Math.floor(((count * 13) % 25) + 12);
+
+                const entity = {
+                    t: ticker,
+                    n: name,
+                    e: ex.e,
+                    c: ex.c,
+                    b: basePrice,
+                    ema: ema,
+                    r: riskPct,
+                    statusType: statusType,
+                    fundSig: isFalling ? 'CAUTIONARY' : (isHold ? 'NEUTRAL' : 'CONSTRUCTIVE'),
+                    fundText: isFalling ? 
+                        `FALLING STOCK ALERT: Margin pressure and declining volume detected in regulatory quarterly report.` : 
+                        (isHold ? `HOLD CRITERIA MET: Financial fundamentals stable, waiting for clear breakout signals.` : `Strong operational efficiency and earnings expansion.`),
+                    cite: `${ex.e} Regulatory Disclosure #${ticker}-2026`,
+                    cat: `Governance Audit in ${count % 28 + 1} Days`
+                };
+
+                globalDatabase[ticker] = entity;
+                globalListOptions.push(`${ticker} - ${name} [${ex.e}]`);
+            }
+
+            const datalist = document.getElementById('globalStockDatalist');
+            let fragment = document.createDocumentFragment();
+            for(let i = 0; i < 1200; i++) {
+                let opt = document.createElement('option');
+                opt.value = globalListOptions[i];
+                fragment.appendChild(opt);
+            }
+            datalist.appendChild(fragment);
+        }
+
+        // Global Chart Instance Handles
+        let techChart, flowChart, riskRadarChart, futureProjectionChart;
+
+        function initCharts() {
+            // 1. Technical Chart
+            const techCtx = document.getElementById('techChart').getContext('2d');
+            techChart = new Chart(techCtx, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Current'],
+                    datasets: [
+                        { label: 'Price', data: [0,0,0,0,0,0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.05)', fill: true, tension: 0.2 },
+                        { label: 'EMA50', data: [0,0,0,0,0,0], borderColor: '#d97706', borderDash: [4, 4], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+
+            // 2. Flow Bar Chart
+            const flowCtx = document.getElementById('flowChart').getContext('2d');
+            flowChart = new Chart(flowCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Inst Flow', 'Mutual Funds', 'Retail', 'Foreign Inst'],
+                    datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#16a34a', '#2563eb', '#dc2626', '#d97706'], borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 10 } } }, y: { display: false } } }
+            });
+
+            // 3. Risk Factor Radar Chart
+            const riskCtx = document.getElementById('riskRadarChart').getContext('2d');
+            riskRadarChart = new Chart(riskCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Volatility', 'Valuation', 'Liquidity', 'Reg Risk', 'Macro'],
+                    datasets: [{ label: 'Risk Rating', data: [20, 20, 20, 20, 20], backgroundColor: 'rgba(220, 38, 38, 0.1)', borderColor: '#dc2626', pointBackgroundColor: '#dc2626' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { grid: { color: '#e2e8f0' }, ticks: { display: false }, pointLabels: { color: '#64748b', font: { size: 9 } } } } }
+            });
+
+            // 4. Future Aspects Projections
+            const futureCtx = document.getElementById('futureProjectionChart').getContext('2d');
+            futureProjectionChart = new Chart(futureCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Today', '+7 Days', '+14 Days', '+21 Days', '+30 Days'],
+                    datasets: [
+                        { label: 'Bullish Path', data: [100, 103, 107, 110, 115], borderColor: '#16a34a', borderDash: [3, 3], fill: false },
+                        { label: 'Hold / Base Path', data: [100, 100, 101, 101, 102], borderColor: '#d97706', fill: false },
+                        { label: 'Bearish Path', data: [100, 96, 93, 90, 86], borderColor: '#dc2626', borderDash: [3, 3], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 10 } } }, y: { display: false } } }
+            });
+        }
+
+        function logToConsole(msg) {
+            const logs = document.getElementById('systemLogs');
+            logs.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${msg}`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateBadge(elId, signal, customClass = '') {
+            const el = document.getElementById(elId);
+            el.innerText = signal;
+            el.className = 'badge';
+
+            if(customClass) {
+                el.classList.add(customClass);
+                return;
+            }
+
+            if(signal.includes('BUY') || signal === 'CONSTRUCTIVE' || signal === 'BULLISH') el.classList.add('badge-buy');
+            else if(signal.includes('SELL') || signal.includes('RISK') || signal === 'CAUTIONARY' || signal === 'BEARISH' || signal === 'FALLING') el.classList.add('badge-sell');
+            else if(signal.includes('HOLD') || signal === 'NEUTRAL') el.classList.add('badge-hold');
+            else el.classList.add('badge-neutral');
+        }
+
+        function quickSelect(ticker) {
+            const item = globalDatabase[ticker.toUpperCase()];
+            if(item) {
+                document.getElementById('tickerSearchInput').value = `${item.t} - ${item.n} [${item.e}]`;
+                executeOrchestrator();
+            }
+        }
+
+        function handleStockSelect(val) {
+            if(!val) return;
+            executeOrchestrator();
+        }
+
+        function resolveSelectedEntity() {
+            const rawVal = document.getElementById('tickerSearchInput').value.trim().toUpperCase();
+            if(!rawVal) return globalDatabase['NVDA'];
+
+            const extractedTicker = rawVal.split(' ')[0].replace(/[^A-Z0-9]/g, '');
+            if(globalDatabase[extractedTicker]) return globalDatabase[extractedTicker];
+
+            const fallbackTicker = extractedTicker || 'EQUITY';
+            return {
+                t: fallbackTicker,
+                n: `${fallbackTicker} Global Corp`,
+                e: 'GLOBAL-EX',
+                c: '$',
+                b: 150,
+                ema: 150,
+                r: 25,
+                statusType: 'HOLD',
+                fundSig: 'NEUTRAL',
+                fundText: 'Standard financial asset performance. HOLD criteria active pending sector catalysts.',
+                cite: `Global Filing Disclosure #${fallbackTicker}-2026`,
+                cat: 'Quarterly Review in 14 Days'
+            };
+        }
+
+        async function executeOrchestrator() {
+            const btn = document.getElementById('runBtn');
+            const profile = document.getElementById('profileInput').value;
+            const horizon = document.getElementById('horizonInput').value;
+            const isDegraded = document.getElementById('degradedInput').checked;
+            const entity = resolveSelectedEntity();
+            const startTime = performance.now();
+
+            btn.disabled = true;
+            logToConsole(`[ANALYSIS_START] Target: ${entity.t} (${entity.n}) | Exchange: ${entity.e}`);
+
+            // Reset UI Statuses
+            ['statusTech', 'statusFund', 'statusSent', 'statusRisk'].forEach(id => {
+                document.getElementById(id).innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing';
+                document.getElementById(id).className = 'agent-status';
+            });
+            document.getElementById('statusSynth').innerText = 'Synthesizing...';
+
+            await new Promise(r => setTimeout(r, 400));
+
+            // 1. Technical Evaluation
+            let techSig = "HOLD";
+            if(entity.statusType === 'BUY') techSig = "BUY";
+            else if(entity.statusType === 'FALLING') techSig = "FALLING / SELL";
+
+            if (isDegraded) techSig = "OFFLINE";
+
+            document.getElementById('statusTech').innerText = isDegraded ? 'Degraded' : 'Complete';
+            updateBadge('sigTech', techSig);
+            document.getElementById('techEmaVal').innerText = `EMA50: ${entity.c}${entity.ema}`;
+            document.getElementById('reasonTech').innerText = isDegraded ? 
+                "ERROR: Exchange WebSocket stream disconnected. Technical indicator verification unavailable." : 
+                `Price (${entity.c}${entity.b}) is trading ${entity.b > entity.ema ? 'above' : (entity.b < entity.ema ? 'below' : 'at level with')} 50-day EMA (${entity.c}${entity.ema}).`;
+
+            // Chart Update
+            const b = entity.b;
+            const techSeries = isDegraded ? [0,0,0,0,0,0] : 
+                (entity.statusType === 'FALLING' ? [b*1.12, b*1.08, b*1.05, b*1.02, b*0.98, b] : 
+                (entity.statusType === 'BUY' ? [b*0.92, b*0.94, b*0.96, b*0.99, b*1.01, b] : [b*0.99, b*1.01, b*0.99, b*1.00, b*0.99, b]));
+            
+            techChart.data.datasets[0].borderColor = entity.statusType === 'FALLING' ? '#dc2626' : (entity.statusType === 'BUY' ? '#16a34a' : '#d97706');
+            techChart.data.datasets[0].data = techSeries;
+            techChart.data.datasets[1].data = [entity.ema, entity.ema, entity.ema, entity.ema, entity.ema, entity.ema];
+            techChart.update();
+
+            // 2. Fundamental Evaluation
+            document.getElementById('statusFund').innerText = 'Complete';
+            updateBadge('sigFund', entity.fundSig);
+            document.getElementById('reasonFund').innerText = entity.fundText;
+            document.getElementById('citeFund').style.display = 'block';
+            document.getElementById('citeText').innerText = entity.cite;
+
+            // 3. Institutional Flow Evaluation
+            document.getElementById('statusSent').innerText = 'Complete';
+            const sentSig = entity.statusType === 'BUY' ? "BULLISH" : (entity.statusType === 'FALLING' ? "BEARISH" : "NEUTRAL");
+            updateBadge('sigSent', sentSig);
+            document.getElementById('reasonSent').innerText = `Institutional liquidity flows on ${entity.e} reflect ${sentSig.toLowerCase()} capital allocation.`;
+            
+            flowChart.data.datasets[0].data = sentSig === 'BULLISH' ? [450, 320, -90, 210] : (sentSig === 'BEARISH' ? [-380, -210, 150, -180] : [110, -50, 80, -20]);
+            flowChart.update();
+
+            // 4. Risk Profile Evaluation
+            document.getElementById('statusRisk').innerText = 'Complete';
+            updateBadge('sigRisk', `RISK: ${entity.r}%`, entity.r > 35 ? 'badge-sell' : (entity.r < 22 ? 'badge-buy' : 'badge-hold'));
+            document.getElementById('reasonRisk').innerText = `Risk metric calculated at ${entity.r}%. Asset exposure evaluated against ${profile.toUpperCase()} institutional mandate.`;
+            
+            riskRadarChart.data.datasets[0].borderColor = entity.r > 35 ? '#dc2626' : '#2563eb';
+            riskRadarChart.data.datasets[0].data = [entity.r, entity.r * 0.8, entity.r * 0.7, entity.r * 0.9, entity.r * 0.6];
+            riskRadarChart.update();
+
+            await new Promise(r => setTimeout(r, 200));
+
+            // Synthesis Engine & HOLD Logic Integration
+            let finalDecision = "HOLD";
+            let executiveSummary = "";
+
+            if (isDegraded) {
+                finalDecision = "HOLD";
+                executiveSummary = "HOLD MANDATE (DEGRADED FEED): Market data feeds disconnected. Action deferred to prevent unvalidated exposure.";
+            } else {
+                // HOLD Conditions Check
+                const isConsolidating = entity.statusType === 'HOLD';
+                const isConflict = (techSig === 'BUY' && entity.fundSig === 'CAUTIONARY') || (techSig.includes('SELL') && entity.fundSig === 'CONSTRUCTIVE');
+                
+                if (isConsolidating || isConflict) {
+                    finalDecision = "HOLD / ACCUMULATE";
+                    executiveSummary = isConflict ? 
+                        "HOLD DECISION: Technical and Fundamental signals are conflicting. Risk model advises maintaining position until breakout directional clarity." : 
+                        "HOLD DECISION: Asset is currently in price consolidation. Financial fundamentals remain stable; maintaining neutral stance.";
+                } else if (entity.statusType === 'FALLING') {
+                    finalDecision = "REDUCE / SELL";
+                    executiveSummary = "SELL / REDUCE ALERT: Asset displays negative price momentum and elevated fundamental risk exposure. Reallocation recommended.";
+                } else if (entity.statusType === 'BUY') {
+                    if (profile === 'conservative' && entity.r > 30) {
+                        finalDecision = "HOLD";
+                        executiveSummary = "HOLD CONSTRAINT: Stock momentum is positive, but asset risk exceeds Conservative Risk Profile limits.";
+                    } else {
+                        finalDecision = "BUY / OUTPERFORM";
+                        executiveSummary = "BUY MANDATE: High conviction alignment across technical price trendlines, institutional inflows, and quarterly filings.";
+                    }
+                }
+            }
+
+            // Calculations
+            const isBuy = finalDecision.includes("BUY");
+            const isSell = finalDecision.includes("SELL");
+
+            const targetPrice = (entity.b * (isBuy ? 1.10 : (isSell ? 0.91 : 1.03))).toFixed(1);
+            const stopLoss = (entity.b * (isBuy ? 0.95 : (isSell ? 0.98 : 0.96))).toFixed(1);
+            const projectedRoi = isBuy ? "+10.2%" : (isSell ? "-9.0%" : "+3.0%");
+
+            // Render Synthesis Output
+            document.getElementById('statusSynth').innerText = 'Complete';
+            const recEl = document.getElementById('finalRec');
+            recEl.innerText = finalDecision;
+            
+            if (isBuy) {
+                recEl.className = 'text-green';
+            } else if (isSell) {
+                recEl.className = 'text-red';
+            } else {
+                recEl.className = 'text-amber';
+            }
+
+            document.getElementById('outTicker').innerText = entity.t;
+            document.getElementById('outExchange').innerText = entity.e;
+            document.getElementById('outRiskScore').innerText = `${entity.r}%`;
+            document.getElementById('outRiskScore').className = entity.r > 35 ? 'text-red' : 'text-green';
+            document.getElementById('outHorizon').innerText = horizon.toUpperCase();
+            document.getElementById('finalReasoning').innerText = executiveSummary;
+
+            // Render Projection Chart
+            document.getElementById('catalystTag').innerText = `Catalyst: ${entity.cat}`;
+            document.getElementById('futureThesis').innerText = `Forward Outlook (${horizon.toUpperCase()}): Target bounds defined between ${entity.c}${stopLoss} and ${entity.c}${targetPrice} based on ${finalDecision} model assessment.`;
+
+            futureProjectionChart.data.datasets[0].data = [entity.b, entity.b*1.03, entity.b*1.06, entity.b*1.08, targetPrice];
+            futureProjectionChart.data.datasets[1].data = [entity.b, entity.b*1.00, entity.b*1.01, entity.b*1.02, (entity.b*1.03).toFixed(1)];
+            futureProjectionChart.data.datasets[2].data = [entity.b, entity.b*0.96, entity.b*0.93, entity.b*0.90, stopLoss];
+            futureProjectionChart.update();
+
+            // Header Stats Updates
+            const endTime = performance.now();
+            document.getElementById('latencyMetric').innerText = `${(endTime - startTime).toFixed(0)} ms`;
+            document.getElementById('riskPercentMetric').innerText = `${entity.r}%`;
+            document.getElementById('riskPercentMetric').className = entity.r > 35 ? 'stat-val text-red' : 'stat-val text-green';
+            
+            document.getElementById('confMetric').innerText = isDegraded ? '50%' : '94%';
+            
+            const roiEl = document.getElementById('roiMetric');
+            roiEl.innerText = projectedRoi;
+            roiEl.className = isBuy ? 'stat-val text-green' : (isSell ? 'stat-val text-red' : 'stat-val text-amber');
+
+            document.getElementById('targetStopMetric').innerHTML = `T: <span class="text-green">${entity.c}${targetPrice}</span><br>S: <span class="text-red">${entity.c}${stopLoss}</span>`;
+
+            logToConsole(`[COMPLETE] Decision: ${finalDecision} | Target: ${entity.c}${targetPrice} | Stop: ${entity.c}${stopLoss}`);
+            btn.disabled = false;
+        }
+
+        window.onload = () => {
+            generate5000Database();
+            initCharts();
+            quickSelect('NVDA');
+        };
+    </script>
+</body>
+</html>
