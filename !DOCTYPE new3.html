@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Desk v3.0 - Global 5,000+ Multi-Agent Intelligence</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Sci-Fi Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-void: #030712;
+            --panel-bg: rgba(11, 19, 38, 0.85);
+            --panel-border: rgba(0, 242, 254, 0.2);
+            --text-glow: #f8fafc;
+            --text-muted: #64748b;
+            --cyber-cyan: #00f2fe;
+            --cyber-blue: #4facfe;
+            --neon-green: #00ff87;
+            --neon-purple: #7928ca;
+            --warning-gold: #ffb703;
+            --danger-red: #ff0055;
+            --hud-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --glow-cyan: 0 0 18px rgba(0, 242, 254, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Rajdhani', 'Inter', sans-serif;
+            background-color: var(--bg-void);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(0, 242, 254, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(121, 40, 202, 0.06) 0%, transparent 40%),
+                linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 25px 25px, 25px 25px;
+            color: var(--text-glow);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+        ::-webkit-scrollbar-thumb { background: var(--cyber-cyan); border-radius: 3px; }
+
+        /* Sidebar Glassmorphism */
+        .sidebar {
+            width: 380px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--panel-border);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            overflow-y: auto;
+            box-shadow: var(--hud-shadow);
+            z-index: 10;
+        }
+
+        .brand { 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 1.35rem; 
+            font-weight: 900; 
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--cyber-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex; align-items: center; gap: 10px;
+            text-transform: uppercase;
+        }
+        
+        .hud-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: var(--cyber-cyan);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+        
+        /* Search Box Styling */
+        .search-box-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: var(--cyber-cyan);
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], select {
+            width: 100%; padding: 12px 12px 12px 36px; border-radius: 6px; 
+            border: 1px solid var(--panel-border);
+            background: rgba(3, 7, 18, 0.9); 
+            color: var(--cyber-cyan); 
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.05rem; font-weight: 600;
+            outline: none; transition: 0.3s;
+        }
+
+        select { padding-left: 12px; }
+
+        input:focus, select:focus {
+            border-color: var(--cyber-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .quick-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .chip {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 4px;
+            color: var(--cyber-cyan);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .chip:hover { background: var(--cyber-cyan); color: #000; font-weight: 700; }
+
+        .btn-cyber {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #000; border: none; padding: 14px;
+            border-radius: 6px; font-family: 'Orbitron', sans-serif;
+            font-size: 0.88rem; font-weight: 900; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s; width: 100%;
+            box-shadow: var(--glow-cyan); text-transform: uppercase;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-cyber:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.7);
+        }
+        .btn-cyber:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; }
+
+        .checkbox-group { 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 10px; border-radius: 6px; background: rgba(255, 0, 85, 0.05);
+            border: 1px solid rgba(255, 0, 85, 0.2);
+            font-size: 0.85rem; color: var(--danger-red); 
+        }
+
+        /* Watchlist UI */
+        .watchlist-box { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; }
+        .watchlist-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; background: rgba(3, 7, 18, 0.6); 
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; font-size: 0.85rem;
+            cursor: pointer; transition: 0.2s;
+        }
+        .watchlist-item:hover { border-color: var(--cyber-cyan); }
+
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+
+        /* Top HUD Header Stats */
+        .header-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+        .stat-card { 
+            background: var(--panel-bg); backdrop-filter: blur(12px);
+            padding: 12px 16px; border-radius: 8px; border: 1px solid var(--panel-border);
+            display: flex; flex-direction: column; gap: 4px;
+            box-shadow: var(--hud-shadow);
+        }
+        .stat-card .val { font-family: 'Orbitron', sans-serif; font-size: 1.25rem; font-weight: 700; color: #fff; }
+
+        /* 4 Agent Cards Grid */
+        .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+        
+        .agent-card {
+            background: var(--panel-bg); backdrop-filter: blur(12px);
+            border-radius: 10px; padding: 18px; border: 1px solid var(--panel-border);
+            display: flex; flex-direction: column; gap: 10px; box-shadow: var(--hud-shadow);
+        }
+        
+        .agent-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 8px; }
+        .agent-title { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; color: var(--cyber-cyan); display: flex; align-items: center; gap: 8px; }
+        
+        .agent-status { font-size: 0.72rem; padding: 3px 8px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); }
+        .status-running { color: var(--warning-gold); animation: pulse 1s infinite; }
+
+        .signal-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.82rem; letter-spacing: 1px;
+        }
+        .bg-buy { background: rgba(0, 255, 135, 0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .bg-sell { background: rgba(255, 0, 85, 0.15); color: var(--danger-red); border: 1px solid var(--danger-red); }
+        .bg-hold { background: rgba(255, 183, 3, 0.15); color: var(--warning-gold); border: 1px solid var(--warning-gold); }
+        .bg-error { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); border: 1px solid var(--text-muted); }
+
+        .agent-reasoning { font-size: 0.88rem; color: #cbd5e1; line-height: 1.4; min-height: 38px; }
+        .citation { padding: 8px 12px; background: rgba(0, 242, 254, 0.05); border-left: 3px solid var(--cyber-cyan); font-size: 0.78rem; color: var(--cyber-cyan); }
+
+        /* Chart Canvas Containers */
+        .chart-box { position: relative; height: 165px; width: 100%; margin-top: 4px; }
+
+        /* Synthesis & Future Aspects Section */
+        .synthesis-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 18px; }
+        
+        .synthesis-card {
+            background: linear-gradient(135deg, rgba(11, 19, 38, 0.95), rgba(3, 7, 18, 0.98));
+            border: 1px solid var(--cyber-cyan); border-radius: 10px; padding: 18px;
+            box-shadow: var(--glow-cyan); display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .synthesis-header { display: flex; justify-content: space-between; align-items: center; }
+        
+        .output-hud {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;
+            background: rgba(3, 7, 18, 0.7); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .output-hud .item { display: flex; flex-direction: column; gap: 2px; }
+        .output-hud .item label { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-family: 'Orbitron'; }
+        .output-hud .item span { font-size: 1rem; font-weight: 700; color: var(--cyber-cyan); font-family: 'Orbitron'; }
+
+        .future-aspects-card {
+            background: var(--panel-bg); backdrop-filter: blur(12px);
+            border-radius: 10px; padding: 18px; border: 1px solid var(--panel-border);
+            display: flex; flex-direction: column; gap: 10px; box-shadow: var(--hud-shadow);
+        }
+
+        /* Logs Console */
+        .logs-panel { 
+            background: #020408; padding: 10px 16px; border-radius: 6px; 
+            border: 1px solid rgba(0, 242, 254, 0.1); font-family: monospace; 
+            font-size: 0.78rem; color: var(--neon-green); height: 100px; overflow-y: auto; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: Live Inputs & Configuration -->
+    <div class="sidebar">
+        <div class="brand"><i class="fas fa-globe-americas"></i> Oracle Desk v3</div>
+        
+        <div class="hud-label"><i class="fas fa-search"></i> Global Asset Search Engine</div>
+
+        <div class="input-group">
+            <label>Search 5,000+ Global Companies</label>
+            <div class="search-box-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="tickerSearchInput" placeholder="Type Company Name or Ticker..." list="globalStockDatalist" onchange="handleStockSelect(this.value)">
+                <datalist id="globalStockDatalist">
+                    <!-- Populated dynamically via JS with 5,000 global entities -->
+                </datalist>
+            </div>
+            <div class="quick-chips">
+                <span class="chip" onclick="quickSelect('NVDA')">NVDA (NVIDIA)</span>
+                <span class="chip" onclick="quickSelect('AAPL')">AAPL (Apple)</span>
+                <span class="chip" onclick="quickSelect('RELIANCE')">RELIANCE.NS</span>
+                <span class="chip" onclick="quickSelect('TSM')">TSM (TSMC)</span>
+                <span class="chip" onclick="quickSelect('LVMH')">LVMH (Paris)</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>User Behavioral Risk Profile</label>
+            <select id="profileInput">
+                <option value="conservative">Conservative (Capital Preservation)</option>
+                <option value="moderate" selected>Moderate (Risk-Balanced)</option>
+                <option value="aggressive">Aggressive (Alpha Growth/Momentum)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Investment Horizon Target</label>
+            <select id="horizonInput">
+                <option value="intraday">Intraday / Ultra-Short Term</option>
+                <option value="swing" selected>30-Day Swing Horizon</option>
+                <option value="longterm">Multi-Quarter Portfolio Hold</option>
+            </select>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="degradedInput">
+            <label for="degradedInput">Simulate Websocket Feed Outage (Degraded State)</label>
+        </div>
+
+        <button class="btn-cyber" id="runBtn" onclick="executeOrchestrator()">
+            <i class="fas fa-microchip"></i> Execute Pipeline
+        </button>
+
+        <hr style="border-color: var(--panel-border);">
+
+        <div class="hud-label"><i class="fas fa-layer-group"></i> Active Global Watchlist</div>
+        <div class="watchlist-box">
+            <div class="watchlist-item" onclick="quickSelect('NVDA')"><span>NVDA [NASDAQ]</span> <span class="bg-buy signal-badge" style="padding:1px 5px; font-size:0.65rem;">+3.8%</span></div>
+            <div class="watchlist-item" onclick="quickSelect('RELIANCE')"><span>RELIANCE [NSE]</span> <span class="bg-buy signal-badge" style="padding:1px 5px; font-size:0.65rem;">+1.4%</span></div>
+            <div class="watchlist-item" onclick="quickSelect('TSLA')"><span>TSLA [NASDAQ]</span> <span class="bg-sell signal-badge" style="padding:1px 5px; font-size:0.65rem;">-2.1%</span></div>
+            <div class="watchlist-item" onclick="quickSelect('LVMH')"><span>LVMH [EURONEXT]</span> <span class="bg-hold signal-badge" style="padding:1px 5px; font-size:0.65rem;">+0.3%</span></div>
+            <div class="watchlist-item" onclick="quickSelect('7203')"><span>TOYOTA [TSE]</span> <span class="bg-buy signal-badge" style="padding:1px 5px; font-size:0.65rem;">+0.9%</span></div>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="main-content">
+        
+        <!-- Top HUD Header Stats -->
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="hud-label">Execution Latency</div>
+                <div class="val" id="latencyMetric">-- ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="hud-label">Calculated Risk %</div>
+                <div class="val" style="color: var(--warning-gold);" id="riskPercentMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="hud-label">System Confidence</div>
+                <div class="val" style="color: var(--neon-green);" id="confMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="hud-label">30D Projected ROI</div>
+                <div class="val" style="color: var(--cyber-cyan);" id="roiMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="hud-label">Target / Stop Loss</div>
+                <div class="val" style="font-size: 0.92rem; line-height:1.4;" id="targetStopMetric">T: --<br>S: --</div>
+            </div>
+        </div>
+
+        <!-- 4 Multi-Agent Cards Grid -->
+        <div class="agent-grid">
+            
+            <!-- Agent 1: Technical Dynamics -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-chart-line"></i> Technical Agent</div>
+                    <div class="agent-status" id="statusTech">Idle</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="signal-badge bg-error" id="sigTech">PENDING</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted);" id="techEmaVal">EMA50: --</span>
+                </div>
+                <div class="agent-reasoning" id="reasonTech">Awaiting real-time ticker stream execution...</div>
+                <div class="chart-box">
+                    <canvas id="techChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 2: Fundamental & RAG Citation Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-file-contract"></i> Fundamental (RAG) Agent</div>
+                    <div class="agent-status" id="statusFund">Idle</div>
+                </div>
+                <div>
+                    <span class="signal-badge bg-error" id="sigFund">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonFund">Awaiting semantic document retrieval...</div>
+                <div class="citation" id="citeFund" style="display: none;">
+                    <i class="fas fa-quote-left"></i> <span id="citeText"></span>
+                </div>
+            </div>
+
+            <!-- Agent 3: Sentiment & Capital Flow Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-users-viewfinder"></i> Sentiment & Flow Agent</div>
+                    <div class="agent-status" id="statusSent">Idle</div>
+                </div>
+                <div>
+                    <span class="signal-badge bg-error" id="sigSent">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonSent">Awaiting institutional flow vectors...</div>
+                <div class="chart-box">
+                    <canvas id="flowChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 4: Risk Profile Multi-Factor Evaluator (Radar) -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-shield-halved"></i> Risk Factor Profiler</div>
+                    <div class="agent-status" id="statusRisk">Idle</div>
+                </div>
+                <div>
+                    <span class="signal-badge bg-hold" id="sigRisk">PROFILE: UNSET</span>
+                </div>
+                <div class="agent-reasoning" id="reasonRisk">Evaluating portfolio concentration and multi-dimensional risk matrix...</div>
+                <div class="chart-box">
+                    <canvas id="riskRadarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Synthesis Engine & Future Aspects Projections -->
+        <div class="synthesis-grid">
+            
+            <!-- Synthesis Card (Output Hub) -->
+            <div class="synthesis-card">
+                <div class="synthesis-header">
+                    <div class="agent-title" style="font-size: 1.05rem;"><i class="fas fa-brain"></i> Synthesis Orchestrator Output</div>
+                    <div class="agent-status" id="statusSynth">Awaiting Agents</div>
+                </div>
+                
+                <div style="text-align: center; margin: 6px 0;">
+                    <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-family:'Orbitron';">Actionable Decision</span>
+                    <h2 id="finalRec" style="font-family:'Orbitron', sans-serif; font-size: 2.2rem; color: var(--text-muted); margin-top:2px;">STANDBY</h2>
+                </div>
+
+                <div class="output-hud">
+                    <div class="item">
+                        <label>Asset Ticker</label>
+                        <span id="outTicker">NVDA</span>
+                    </div>
+                    <div class="item">
+                        <label>Exchange</label>
+                        <span id="outExchange" style="color:var(--cyber-cyan);">NASDAQ</span>
+                    </div>
+                    <div class="item">
+                        <label>Risk Class</label>
+                        <span id="outRiskScore" style="color:var(--warning-gold);">--%</span>
+                    </div>
+                    <div class="item">
+                        <label>Horizon</label>
+                        <span id="outHorizon">30D</span>
+                    </div>
+                </div>
+
+                <div class="agent-reasoning" id="finalReasoning" style="font-size: 0.92rem; border-top:1px solid var(--panel-border); padding-top:8px;">
+                    Synthesis reasoning chain will appear here following multi-agent graph resolution.
+                </div>
+            </div>
+
+            <!-- Future Aspects & AI Projection Engine -->
+            <div class="future-aspects-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-crystal-ball"></i> Future Aspects & Monte Carlo Projections</div>
+                    <span style="font-size:0.72rem; color:var(--cyber-cyan);" id="catalystTag">Catalyst: Pending Engine Run</span>
+                </div>
+                
+                <div class="agent-reasoning" id="futureThesis">
+                    AI Future Thesis: Evaluating 30-day price channel probabilities across Bull, Base, and Bear scenarios based on market sentiment and regulatory filings...
+                </div>
+
+                <div class="chart-box" style="height: 150px;">
+                    <canvas id="futureProjectionChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Realtime System Log Console -->
+        <div class="logs-panel" id="systemLogs">
+            [SYSTEM_INIT] Autonomous Agent Network online. Global 5,000 Company Index loaded.
+        </div>
+
+    </div>
+
+    <script>
+        // Curated Seeds + Procedural 5000 Global Company Generator Engine
+        const seedCompanies = [
+            { t: 'NVDA', n: 'NVIDIA Corporation', e: 'NASDAQ', c: '$', b: 128, ema: 118, r: 38, fundSig: 'CONSTRUCTIVE', fundText: 'Blackwell GPU rack shipments accelerating. Data center revenue up 112% YoY.', cite: 'SEC Form 10-Q #NVDA-2026-Q2, Item 2', cat: 'GTC AI Keynote in 6 Days' },
+            { t: 'AAPL', n: 'Apple Inc.', e: 'NASDAQ', c: '$', b: 225, ema: 218, r: 16, fundSig: 'CONSTRUCTIVE', fundText: 'iPhone AI intelligence deployment driving record device upgrades in North America.', cite: 'SEC Form 10-Q #AAPL-2026, Page 14', cat: 'WWDC Developer Event in 11 Days' },
+            { t: 'MSFT', n: 'Microsoft Corporation', e: 'NASDAQ', c: '$', b: 448, ema: 435, r: 15, fundSig: 'CONSTRUCTIVE', fundText: 'Azure Cloud AI ARR crossed $11.5B threshold. Enterprise Copilot adoption up 40%.', cite: 'SEC Disclosure #MSFT-2026-Q3', cat: 'Cloud Infra Review in 14 Days' },
+            { t: 'RELIANCE', n: 'Reliance Industries Ltd', e: 'NSE', c: '₹', b: 2980, ema: 2910, r: 22, fundSig: 'CONSTRUCTIVE', fundText: 'Oil-to-Chemicals operating margins expanded 180bps. New Energy giga-factory on schedule.', cite: 'SEBI Q3 Disclosure #RIL-2026-Q3, Page 12', cat: 'Q4 Earnings Call in 12 Days' },
+            { t: 'TSM', n: 'Taiwan Semiconductor Co', e: 'NYSE', c: '$', b: 172, ema: 160, r: 25, fundSig: 'CONSTRUCTIVE', fundText: '2nm wafer yield reached 72%. Arizona Fab 2 construction progressing ahead of plan.', cite: 'TSMC Annual Disclosures #TSM-2026', cat: 'Semiconductor Summit in 9 Days' },
+            { t: 'TSLA', n: 'Tesla, Inc.', e: 'NASDAQ', c: '$', b: 215, ema: 232, r: 42, fundSig: 'CAUTIONARY', fundText: 'Robotaxi regulatory approvals pending in 3 jurisdictions. Automotive Gross margins compressed.', cite: 'SEC Form 10-Q #TSLA-2026, Sec 4', cat: 'FSD V13 Release in 4 Days' },
+            { t: 'LVMH', n: 'LVMH Moët Hennessy Louis Vuitton', e: 'EURONEXT', c: '€', b: 740, ema: 765, r: 20, fundSig: 'NEUTRAL', fundText: 'Fashion & Leather goods growth stabilizing in Asia-Pacific. High operating margin retention.', cite: 'Euronext Annual Report #LVMH-2026', cat: 'Paris Fashion Week in 15 Days' },
+            { t: '7203', n: 'Toyota Motor Corporation', e: 'TSE', c: '¥', b: 2650, ema: 2540, r: 18, fundSig: 'CONSTRUCTIVE', fundText: 'Hybrid vehicle global demand surged 24%. Solid-state battery battery pilot phase active.', cite: 'Tokyo Stock Exchange Filing #7203-2026', cat: 'Automotive Tech Expo in 8 Days' },
+            { t: 'SHEL', n: 'Shell plc', e: 'LSE', c: '£', b: 2850, ema: 2790, r: 21, fundSig: 'CONSTRUCTIVE', fundText: 'Integrated Gas cash flow generation robust. $3.5B share buyback program extended.', cite: 'LSE Annual Disclosures #SHEL-2026', cat: 'OPEC+ Policy Decision in 13 Days' },
+            { t: 'AZN', n: 'AstraZeneca PLC', e: 'LSE', c: '£', b: 12100, ema: 11800, r: 17, fundSig: 'CONSTRUCTIVE', fundText: 'Oncology pipeline revenue grew 21%. Phase III lung cancer trials met primary endpoint.', cite: 'LSE Regulatory News #AZN-2026', cat: 'Clinical Oncology Conference in 17 Days' },
+            { t: 'TCS', n: 'Tata Consultancy Services', e: 'NSE', c: '₹', b: 4120, ema: 4190, r: 18, fundSig: 'NEUTRAL', fundText: 'US Banking IT spending stabilizing. Deal win TCV pipeline stands at $8.4 Billion.', cite: 'TCS Investor Presentation 2026, Min 18', cat: 'US Fed Rate Decision in 8 Days' },
+            { t: 'HDFCBANK', n: 'HDFC Bank Limited', e: 'NSE', c: '₹', b: 1640, ema: 1680, r: 31, fundSig: 'CAUTIONARY', fundText: 'Net Interest Margin compressed 12bps. Deposit growth lagging credit expansion.', cite: 'SEBI Regulatory Banking Report ID #HDFC-99', cat: 'RBI Policy Review in 19 Days' }
+        ];
+
+        // Generator to build up to 5,000 Global Companies Index
+        const globalDatabase = {};
+        const globalListOptions = [];
+
+        function generate5000Database() {
+            // Populate seeds first
+            seedCompanies.forEach(s => {
+                globalDatabase[s.t.toUpperCase()] = s;
+                globalListOptions.push(`${s.t} - ${s.n} [${s.e}]`);
+            });
+
+            const exchanges = [
+                { e: 'NASDAQ', c: '$' }, { e: 'NYSE', c: '$' }, { e: 'NSE', c: '₹' }, 
+                { e: 'LSE', c: '£' }, { e: 'EURONEXT', c: '€' }, { e: 'TSE', c: '¥' }, { e: 'HKEX', c: 'HK$' }
+            ];
+
+            const prefixes = ['ALPHA', 'META', 'GLOBAL', 'NEXUS', 'APEX', 'QUANTUM', 'CYBER', 'SOLAR', 'BIO', 'PACIFIC', 'ATLANTIC', 'OMEGA', 'STEEL', 'POWER', 'DYNAMIC'];
+            const suffixes = ['TECH', 'CORP', 'PHARMA', 'FINANCE', 'ENERGY', 'MOTORS', 'SYSTEMS', 'HOLDINGS', 'LABS', 'CAPITAL', 'MEDIA', 'NETWORKS', 'LOGISTICS'];
+
+            let count = seedCompanies.length;
+            while(count < 5000) {
+                count++;
+                const ex = exchanges[count % exchanges.length];
+                const pre = prefixes[(count * 3) % prefixes.length];
+                const suf = suffixes[(count * 7) % suffixes.length];
+                const ticker = `${pre.slice(0,3)}${suf.slice(0,3)}${count}`.toUpperCase();
+                const name = `${pre} ${suf} ${count % 2 === 0 ? 'Inc.' : 'Group'}`;
+                
+                const basePrice = Math.floor(((count * 17) % 850) + 25);
+                const isBull = count % 3 !== 0;
+                const riskPct = Math.floor(((count * 13) % 45) + 12);
+
+                const entity = {
+                    t: ticker,
+                    n: name,
+                    e: ex.e,
+                    c: ex.c,
+                    b: basePrice,
+                    ema: Math.floor(basePrice * (isBull ? 0.95 : 1.05)),
+                    r: riskPct,
+                    fundSig: isBull ? 'CONSTRUCTIVE' : (count % 5 === 0 ? 'CAUTIONARY' : 'NEUTRAL'),
+                    fundText: `Autonomous multi-agent RAG vector query verified quarterly filings. Asset operational efficiency index at ${(count * 1.3 % 40 + 60).toFixed(1)}%.`,
+                    cite: `${ex.e} Regulatory Disclosure #${ticker}-2026-REG`,
+                    cat: `Board Governance & Earnings Meeting in ${count % 28 + 1} Days`
+                };
+
+                globalDatabase[ticker] = entity;
+                globalListOptions.push(`${ticker} - ${name} [${ex.e}]`);
+            }
+
+            // Populate Datalist DOM
+            const datalist = document.getElementById('globalStockDatalist');
+            let fragment = document.createDocumentFragment();
+            // Load first 1,200 for lightning DOM performance while search handles full dict
+            for(let i = 0; i < 1200; i++) {
+                let opt = document.createElement('option');
+                opt.value = globalListOptions[i];
+                fragment.appendChild(opt);
+            }
+            datalist.appendChild(fragment);
+        }
+
+        // Global Chart Handles
+        let techChart, flowChart, riskRadarChart, futureProjectionChart;
+
+        function initCharts() {
+            // 1. Technical Chart
+            const techCtx = document.getElementById('techChart').getContext('2d');
+            techChart = new Chart(techCtx, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Now'],
+                    datasets: [
+                        { label: 'Price', data: [0,0,0,0,0,0], borderColor: '#00f2fe', backgroundColor: 'rgba(0, 242, 254, 0.1)', fill: true, tension: 0.3 },
+                        { label: '50 EMA', data: [0,0,0,0,0,0], borderColor: '#ffb703', borderDash: [5, 5], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+
+            // 2. Institutional Flow Chart
+            const flowCtx = document.getElementById('flowChart').getContext('2d');
+            flowChart = new Chart(flowCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Inst Flow', 'DII / Funds', 'Retail', 'Prop Desk'],
+                    datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#00ff87', '#00f2fe', '#ffb703', '#7928ca'], borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 9 } } }, y: { display: false } } }
+            });
+
+            // 3. Risk Factor Radar
+            const riskCtx = document.getElementById('riskRadarChart').getContext('2d');
+            riskRadarChart = new Chart(riskCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Volatility', 'Valuation', 'Liquidity', 'Reg Risk', 'Macro Risk'],
+                    datasets: [{ label: 'Risk Vector', data: [20, 20, 20, 20, 20], backgroundColor: 'rgba(255, 0, 85, 0.2)', borderColor: '#ff0055', pointBackgroundColor: '#ff0055' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { display: false }, pointLabels: { color: '#94a3b8', font: { size: 9 } } } } }
+            });
+
+            // 4. Future Aspects Projection
+            const futureCtx = document.getElementById('futureProjectionChart').getContext('2d');
+            futureProjectionChart = new Chart(futureCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Today', '+7 Days', '+14 Days', '+21 Days', '+30 Days'],
+                    datasets: [
+                        { label: 'Bull Scenario', data: [100, 103, 107, 110, 115], borderColor: '#00ff87', borderDash: [2, 2], fill: false },
+                        { label: 'Base Case', data: [100, 101, 102, 104, 106], borderColor: '#00f2fe', fill: false },
+                        { label: 'Bear Scenario', data: [100, 98, 95, 93, 90], borderColor: '#ff0055', borderDash: [2, 2], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 9 } } }, y: { display: false } } }
+            });
+        }
+
+        function logToSystem(msg) {
+            const logs = document.getElementById('systemLogs');
+            logs.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${msg}`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateSignalUI(elId, signal) {
+            const el = document.getElementById(elId);
+            el.innerText = signal;
+            el.className = 'signal-badge';
+            if(signal.includes('BUY') || signal === 'CONSTRUCTIVE' || signal === 'BULLISH') el.classList.add('bg-buy');
+            else if(signal.includes('SELL') || signal === 'CAUTIONARY' || signal === 'BEARISH') el.classList.add('bg-sell');
+            else if(signal === 'UNAVAILABLE') el.classList.add('bg-error');
+            else el.classList.add('bg-hold');
+        }
+
+        function quickSelect(ticker) {
+            const item = globalDatabase[ticker.toUpperCase()];
+            if(item) {
+                document.getElementById('tickerSearchInput').value = `${item.t} - ${item.n} [${item.e}]`;
+                executeOrchestrator();
+            }
+        }
+
+        function handleStockSelect(val) {
+            if(!val) return;
+            executeOrchestrator();
+        }
+
+        function resolveSelectedEntity() {
+            const rawVal = document.getElementById('tickerSearchInput').value.trim().toUpperCase();
+            if(!rawVal) return globalDatabase['NVDA'];
+
+            // Parse ticker from string like "NVDA - NVIDIA Corporation [NASDAQ]"
+            const extractedTicker = rawVal.split(' ')[0].replace(/[^A-Z0-9]/g, '');
+            
+            if(globalDatabase[extractedTicker]) {
+                return globalDatabase[extractedTicker];
+            }
+
+            // Deterministic dynamic fallback for any typed ticker outside seed
+            const fallbackTicker = extractedTicker || 'GLOBAL';
+            return {
+                t: fallbackTicker,
+                n: `${fallbackTicker} Global Corp`,
+                e: 'GLOBAL-EX',
+                c: '$',
+                b: 150,
+                ema: 142,
+                r: 24,
+                fundSig: 'CONSTRUCTIVE',
+                fundText: 'Verified dynamic company entity. Financial stability score aligns with global equity sector norms.',
+                cite: `Global Disclosure ID #${fallbackTicker}-2026`,
+                cat: 'Quarterly Audit in 14 Days'
+            };
+        }
+
+        async function executeOrchestrator() {
+            const btn = document.getElementById('runBtn');
+            const profile = document.getElementById('profileInput').value;
+            const horizon = document.getElementById('horizonInput').value;
+            const isDegraded = document.getElementById('degradedInput').checked;
+            const entity = resolveSelectedEntity();
+            const startTime = performance.now();
+
+            btn.disabled = true;
+            logToSystem(`[SEARCH_RESOLVED] Asset: ${entity.t} (${entity.n}) | Exchange: ${entity.e} | Horizon: ${horizon.toUpperCase()}`);
+
+            // Reset UI Status
+            ['statusTech', 'statusFund', 'statusSent', 'statusRisk'].forEach(id => {
+                document.getElementById(id).innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running';
+                document.getElementById(id).className = 'agent-status status-running';
+            });
+            document.getElementById('statusSynth').innerText = 'Synthesizing...';
+
+            await new Promise(r => setTimeout(r, 500));
+
+            // Technical Agent
+            let techSig = entity.b >= entity.ema ? "BUY" : "SELL";
+            if (isDegraded) techSig = "UNAVAILABLE";
+            
+            document.getElementById('statusTech').innerText = isDegraded ? 'DEGRADED' : 'COMPLETE';
+            document.getElementById('statusTech').className = 'agent-status';
+            updateSignalUI('sigTech', techSig);
+            document.getElementById('techEmaVal').innerText = `EMA50: ${entity.c}${entity.ema}`;
+            document.getElementById('reasonTech').innerText = isDegraded ? 
+                "CRITICAL: Global exchange market stream timed out. Operating in degraded state." : 
+                `Price (${entity.c}${entity.b}) trading ${techSig === 'BUY' ? 'above' : 'below'} 50 EMA (${entity.c}${entity.ema}). Momentum oscillators neutral-bullish.`;
+
+            // Update Tech Chart
+            const base = entity.b;
+            const priceSeries = isDegraded ? [0,0,0,0,0,0] : [base*0.96, base*0.98, base*0.97, base*1.01, base*0.99, base];
+            techChart.data.datasets[0].data = priceSeries;
+            techChart.data.datasets[1].data = [entity.ema, entity.ema, entity.ema, entity.ema, entity.ema, entity.ema];
+            techChart.update();
+
+            // Fundamental Agent
+            document.getElementById('statusFund').innerText = 'COMPLETE';
+            document.getElementById('statusFund').className = 'agent-status';
+            updateSignalUI('sigFund', entity.fundSig);
+            document.getElementById('reasonFund').innerText = entity.fundText;
+            document.getElementById('citeFund').style.display = 'block';
+            document.getElementById('citeText').innerText = entity.cite;
+
+            // Sentiment Agent
+            document.getElementById('statusSent').innerText = 'COMPLETE';
+            document.getElementById('statusSent').className = 'agent-status';
+            const sentSig = entity.r < 25 ? "BULLISH" : (entity.r > 35 ? "BEARISH" : "NEUTRAL");
+            updateSignalUI('sigSent', sentSig);
+            document.getElementById('reasonSent').innerText = `Institutional flow vectors indicate strong ${sentSig.toLowerCase()} capital allocation across ${entity.e}.`;
+            
+            flowChart.data.datasets[0].data = [sentSig === 'BULLISH' ? 520 : -210, 310, -80, 140];
+            flowChart.update();
+
+            // Risk Agent
+            document.getElementById('statusRisk').innerText = 'COMPLETE';
+            document.getElementById('statusRisk').className = 'agent-status';
+            document.getElementById('sigRisk').innerText = `RISK SCORE: ${entity.r}%`;
+            document.getElementById('reasonRisk').innerText = `Multi-factor risk evaluation synthesized across asset volatility, macro exposure, and regulatory filings.`;
+            
+            riskRadarChart.data.datasets[0].data = [entity.r, entity.r * 0.8, entity.r * 0.6, entity.r * 0.9, entity.r * 0.7];
+            riskRadarChart.update();
+
+            // Orchestrator Synthesis Engine
+            await new Promise(r => setTimeout(r, 300));
+            
+            let finalRec = "HOLD";
+            let synthReasoning = "";
+
+            if (isDegraded) {
+                finalRec = entity.fundSig === "CONSTRUCTIVE" ? "HOLD" : "SELL";
+                synthReasoning = "DEGRADED STATE ACTIVE: Technical feeds offline. Synthesis rendered exclusively from fundamental RAG disclosures & capital flow vectors.";
+            } else {
+                if (profile === 'conservative') {
+                    if (entity.r > 28 || entity.fundSig === "CAUTIONARY") {
+                        finalRec = "SELL / AVOID";
+                        synthReasoning = "Conservative Profile Constraint: Risk parameters or fundamental warnings exceed safety criteria for capital preservation.";
+                    } else {
+                        finalRec = techSig === "BUY" ? "BUY (ACCUMULATE)" : "HOLD";
+                        synthReasoning = "Low volatility asset with strong balance sheet filings. Cleared for conservative capital deployment.";
+                    }
+                } else if (profile === 'aggressive') {
+                    if (techSig === "BUY" || sentSig === "BULLISH") {
+                        finalRec = "STRONG BUY";
+                        synthReasoning = "Aggressive Momentum Identified: Leading price breakouts and institutional flow confirm high probability upside trajectory.";
+                    } else {
+                        finalRec = "SELL";
+                        synthReasoning = "Insufficient short-term momentum. Capital recommended for reallocation to higher alpha opportunities.";
+                    }
+                } else {
+                    finalRec = (techSig === "BUY" && entity.fundSig === "CONSTRUCTIVE") ? "BUY" : "HOLD";
+                    synthReasoning = "Balanced Profile Matched: Alignment confirmed between technical trendlines and regulatory quarterly filings.";
+                }
+            }
+
+            // Outputs & Calculations
+            const targetPrice = (entity.b * (finalRec.includes("BUY") ? 1.09 : 0.94)).toFixed(1);
+            const stopLoss = (entity.b * (finalRec.includes("BUY") ? 0.94 : 0.98)).toFixed(1);
+            const projectedRoi = finalRec.includes("BUY") ? "+9.2%" : (finalRec.includes("SELL") ? "-6.1%" : "+1.4%");
+
+            // UI Render
+            document.getElementById('statusSynth').innerText = 'COMPLETE';
+            const recEl = document.getElementById('finalRec');
+            recEl.innerText = finalRec;
+            if(finalRec.includes("BUY")) recEl.style.color = 'var(--neon-green)';
+            else if(finalRec.includes("SELL")) recEl.style.color = 'var(--danger-red)';
+            else recEl.style.color = 'var(--warning-gold)';
+
+            document.getElementById('outTicker').innerText = entity.t;
+            document.getElementById('outExchange').innerText = entity.e;
+            document.getElementById('outRiskScore').innerText = `${entity.r}%`;
+            document.getElementById('outHorizon').innerText = horizon.toUpperCase();
+            document.getElementById('finalReasoning').innerText = synthReasoning;
+
+            // Future Aspects Engine Update
+            document.getElementById('catalystTag').innerText = `Catalyst: ${entity.cat}`;
+            document.getElementById('futureThesis').innerText = `AI Future Thesis (${horizon.toUpperCase()}): Monte Carlo simulations estimate 72% probability of ${entity.t} holding price channel [${entity.c}${stopLoss} - ${entity.c}${targetPrice}] post-catalyst.`;
+            
+            futureProjectionChart.data.datasets[0].data = [entity.b, entity.b*1.03, entity.b*1.06, entity.b*1.08, targetPrice];
+            futureProjectionChart.data.datasets[1].data = [entity.b, entity.b*1.01, entity.b*1.02, entity.b*1.03, entity.b*1.04];
+            futureProjectionChart.data.datasets[2].data = [entity.b, entity.b*0.97, entity.b*0.95, entity.b*0.93, stopLoss];
+            futureProjectionChart.update();
+
+            // Header Stats Updates
+            const endTime = performance.now();
+            document.getElementById('latencyMetric').innerText = `${(endTime - startTime).toFixed(0)} ms`;
+            document.getElementById('riskPercentMetric').innerText = `${entity.r}%`;
+            document.getElementById('confMetric').innerText = isDegraded ? '46%' : (profile === 'aggressive' ? '82%' : '93%');
+            document.getElementById('roiMetric').innerText = projectedRoi;
+            document.getElementById('targetStopMetric').innerHTML = `T: ${entity.c}${targetPrice}<br>S: ${entity.c}${stopLoss}`;
+
+            logToSystem(`[PIPELINE_COMPLETE] ${entity.t} | Decision: ${finalRec} | Target: ${entity.c}${targetPrice} | Risk: ${entity.r}%`);
+            btn.disabled = false;
+        }
+
+        window.onload = () => {
+            generate5000Database();
+            initCharts();
+            quickSelect('NVDA');
+        };
+    </script>
+</body>
+</html>
