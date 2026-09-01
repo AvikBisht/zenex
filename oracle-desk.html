@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORACLE DESK — Multi-Agent Retail Investment Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1319;
+    --panel:#161D27;
+    --panel-2:#1C2531;
+    --line:#2A3441;
+    --gold:#C9A227;
+    --gold-dim:#8A7327;
+    --green:#3FA35A;
+    --red:#C1443C;
+    --amber:#D98C2B;
+    --text:#E8E6DE;
+    --muted:#8A93A3;
+    --faint:#5C6672;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--text);font-family:'Inter',sans-serif;}
+  body{padding:0;min-height:100vh;}
+  ::selection{background:var(--gold-dim);color:#fff;}
+
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+
+  /* ---- Top strip ---- */
+  .topstrip{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, #131A23, #0E1319);
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{width:9px;height:9px;background:var(--gold);display:inline-block;transform:rotate(45deg);}
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:19px;letter-spacing:0.2px;margin:0;}
+  .brand .sub{color:var(--muted);font-size:12px;}
+  .clock{color:var(--muted);font-size:12px;}
+  .clock span{color:var(--text);}
+
+  /* ---- Layout ---- */
+  .frame{display:grid;grid-template-columns:270px 1fr;gap:0;min-height:calc(100vh - 54px);}
+  .sidebar{border-right:1px solid var(--line);padding:20px;background:#111721;}
+  .main{padding:20px 24px 40px;}
+
+  .section-label{font-size:11px;color:var(--faint);letter-spacing:0.4px;margin:0 0 10px;font-family:'IBM Plex Mono',monospace;}
+  .side-block{margin-bottom:26px;}
+
+  select, input[type=number], input[type=text]{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:8px 9px;font-family:'Inter',sans-serif;font-size:13px;border-radius:2px;
+  }
+  select:focus, input:focus{outline:1px solid var(--gold);}
+
+  .profile-opts{display:flex;flex-direction:column;gap:6px;}
+  .profile-opt{
+    border:1px solid var(--line);padding:9px 10px;cursor:pointer;font-size:13px;
+    display:flex;justify-content:space-between;align-items:center;border-radius:2px;
+    transition:border-color .15s;
+  }
+  .profile-opt:hover{border-color:var(--gold-dim);}
+  .profile-opt.active{border-color:var(--gold);background:rgba(201,162,39,0.08);}
+  .profile-opt .tag{font-size:10px;color:var(--faint);font-family:'IBM Plex Mono',monospace;}
+
+  .toggle-row{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--muted);line-height:1.4;margin-bottom:14px;}
+  .toggle-row input{margin-top:2px;}
+
+  .watchlist-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .watchlist-row:last-child{border-bottom:none;}
+
+  button.primary{
+    width:100%;background:var(--gold);color:#151004;border:none;padding:10px;
+    font-weight:600;font-size:13px;cursor:pointer;letter-spacing:0.2px;border-radius:2px;
+    font-family:'Inter',sans-serif;
+  }
+  button.primary:hover{background:#DAB33A;}
+  button.primary:disabled{background:#4A4633;color:#8A8368;cursor:not-allowed;}
+  button.ghost{
+    width:100%;background:transparent;color:var(--muted);border:1px solid var(--line);padding:8px;
+    font-size:12px;cursor:pointer;border-radius:2px;margin-top:8px;font-family:'Inter',sans-serif;
+  }
+  button.ghost:hover{border-color:var(--gold-dim);color:var(--text);}
+
+  /* ---- Main header ---- */
+  .ticker-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .ticker-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin:0;}
+  .ticker-head .meta{color:var(--muted);font-size:12.5px;margin-top:4px;}
+  .price-block{text-align:right;}
+  .price-block .px{font-family:'IBM Plex Mono',monospace;font-size:22px;}
+  .price-block .chg{font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  .up{color:var(--green);} .down{color:var(--red);} .flat{color:var(--muted);}
+
+  .banner{
+    border:1px solid var(--amber);background:rgba(217,140,43,0.08);color:#E8C589;
+    padding:10px 12px;font-size:12.5px;margin-bottom:16px;border-radius:2px;
+  }
+
+  /* ---- Agent cards ---- */
+  .agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  @media(max-width:980px){.agent-grid{grid-template-columns:1fr;}}
+  .agent-card{
+    background:var(--panel);border:1px solid var(--line);padding:14px 15px;position:relative;
+    border-radius:2px;
+  }
+  .agent-card.disabled{opacity:0.55;}
+  .agent-card .accent{position:absolute;top:0;left:0;right:0;height:2px;}
+  .agent-card h3{font-size:12.5px;margin:6px 0 2px;font-weight:600;letter-spacing:0.2px;}
+  .agent-card .role{font-size:10.5px;color:var(--faint);font-family:'IBM Plex Mono',monospace;margin-bottom:10px;}
+  .agent-card .verdict{font-size:16px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
+  .agent-card .conf{font-size:11px;color:var(--muted);margin-bottom:10px;}
+  .agent-card .conf-bar{height:3px;background:var(--line);margin-bottom:10px;position:relative;}
+  .agent-card .conf-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--gold);}
+  .agent-card p{font-size:12px;line-height:1.55;color:var(--text);margin:0 0 8px;}
+  .agent-card .cite{font-size:11px;color:var(--muted);border-left:2px solid var(--line);padding-left:8px;margin-top:8px;}
+  .agent-card .cite b{color:var(--text);font-weight:500;}
+
+  /* ---- Synthesis panel ---- */
+  .synth{
+    background:var(--panel-2);border:1px solid var(--gold-dim);padding:18px 20px;margin-bottom:22px;border-radius:2px;
+  }
+  .synth-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+  .synth-top h3{font-family:'Fraunces',serif;font-size:18px;margin:0;font-weight:600;}
+  .synth-verdict{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;padding:4px 10px;border:1px solid currentColor;}
+  .synth-body{font-size:13.5px;line-height:1.65;color:var(--text);}
+  .synth-chain{margin-top:12px;font-size:12px;color:var(--muted);}
+  .synth-chain li{margin-bottom:4px;}
+  .synth-foot{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
+  .synth-foot div{font-size:11px;color:var(--faint);}
+  .synth-foot div b{display:block;color:var(--text);font-size:14px;font-family:'IBM Plex Mono',monospace;font-weight:500;}
+
+  /* ---- Compare ---- */
+  .compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+  @media(max-width:980px){.compare-grid{grid-template-columns:1fr;}}
+  .compare-card{border:1px solid var(--line);padding:12px 14px;background:var(--panel);border-radius:2px;}
+  .compare-card h4{margin:0 0 8px;font-size:12px;color:var(--muted);font-weight:500;font-family:'IBM Plex Mono',monospace;}
+  .compare-card .v{font-size:17px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;}
+  .compare-card .sub{font-size:11.5px;color:var(--muted);line-height:1.5;}
+
+  /* ---- Portfolio & Log ---- */
+  .two-col{display:grid;grid-template-columns:1.1fr 1.4fr;gap:16px;}
+  @media(max-width:980px){.two-col{grid-template-columns:1fr;}}
+  .panel-box{background:var(--panel);border:1px solid var(--line);padding:16px 18px;border-radius:2px;}
+  .panel-box h3{font-family:'Fraunces',serif;font-size:15px;margin:0 0 12px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--faint);font-weight:500;font-size:10.5px;letter-spacing:0.3px;padding:6px 6px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;}
+  td{padding:7px 6px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  tr:last-child td{border-bottom:none;}
+  .empty-log{color:var(--faint);font-size:12px;padding:14px 0;text-align:center;font-family:'Inter',sans-serif;}
+  .rec-buy{color:var(--green);} .rec-sell{color:var(--red);} .rec-hold{color:var(--amber);}
+
+  .footer-note{margin-top:26px;color:var(--faint);font-size:11px;line-height:1.6;border-top:1px solid var(--line);padding-top:14px;}
+</style>
+</head>
+<body>
+
+<div class="topstrip">
+  <div class="brand"><span class="mark"></span><div><h1>ORACLE DESK</h1><div class="sub">Multi-agent research terminal · synthetic market environment</div></div></div>
+  <div class="clock">SESSION <span id="sessId" class="mono"></span></div>
+</div>
+
+<div class="frame">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="side-block">
+      <div class="section-label">WATCHED INSTRUMENT</div>
+      <select id="tickerSelect"></select>
+    </div>
+
+    <div class="side-block">
+      <div class="section-label">INVESTOR RISK PROFILE</div>
+      <div class="profile-opts" id="profileOpts"></div>
+    </div>
+
+    <div class="side-block">
+      <label class="toggle-row"><input type="checkbox" id="degradedToggle"> Simulate volume-feed outage (degraded-data test)</label>
+      <button class="primary" id="runBtn">Run multi-agent analysis</button>
+      <button class="ghost" id="compareBtn">Compare all 3 profiles on this data</button>
+    </div>
+
+    <div class="side-block">
+      <div class="section-label">WATCHLIST</div>
+      <div id="watchlistBox"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div id="banner"></div>
+
+    <div class="ticker-head">
+      <div>
+        <h2 id="tName">—</h2>
+        <div class="meta" id="tMeta">—</div>
+      </div>
+      <div class="price-block">
+        <div class="px mono" id="tPrice">—</div>
+        <div class="chg mono" id="tChg">—</div>
+      </div>
+    </div>
+
+    <div class="agent-grid" id="agentGrid"></div>
+    <div id="synthWrap"></div>
+    <div id="compareWrap"></div>
+
+    <div class="two-col">
+      <div class="panel-box">
+        <h3>Portfolio &amp; watchlist state</h3>
+        <table>
+          <thead><tr><th>SYM</th><th>QTY</th><th>AVG ₹</th><th>LTP ₹</th><th>VALUE ₹</th><th>WT %</th></tr></thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+        <div style="margin-top:10px;font-size:11.5px;color:var(--muted);">Portfolio value: <b class="mono" id="portTotal" style="color:var(--text)">—</b> · Concentration (largest position): <b class="mono" id="portConc" style="color:var(--text)">—</b></div>
+      </div>
+
+      <div class="panel-box">
+        <h3>Session performance log</h3>
+        <table>
+          <thead><tr><th>TIME</th><th>SYM</th><th>PROFILE</th><th>REC</th><th>CONF</th><th>LATENCY</th><th>CONC.</th></tr></thead>
+          <tbody id="logBody"></tbody>
+        </table>
+        <div id="logEmpty" class="empty-log">No sessions logged yet — run an analysis to populate metrics.</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      All prices, volumes, filings and sentiment scores in this demo are synthetically generated for hackathon evaluation — no live NSE/SEBI feed is connected. Architecture is designed so each mock module (market feed, document corpus, sentiment tagger) is a drop-in replacement point for a real data source. See ARCHITECTURE.md for the full design writeup.
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   ORACLE DESK — synthetic multi-agent financial intelligence
+   ========================================================= */
+
+/* ---------- Seeded RNG (mulberry32) for reproducible-but-varied runs ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hashStr(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return (h^h>>>16)>>>0;}
+
+/* ---------- Universe ---------- */
+const TICKERS = [
+  {symbol:'RELIANCE', name:'Reliance Industries', sector:'Energy · Retail', basePrice:2870},
+  {symbol:'TCS', name:'Tata Consultancy Services', sector:'IT Services', basePrice:3910},
+  {symbol:'INFY', name:'Infosys', sector:'IT Services', basePrice:1615},
+  {symbol:'HDFCBANK', name:'HDFC Bank', sector:'Private Banking', basePrice:1680},
+  {symbol:'TATAMOTORS', name:'Tata Motors', sector:'Automobile', basePrice:965},
+  {symbol:'ZOMATO', name:'Eternal (Zomato)', sector:'Consumer Internet', basePrice:268},
+];
+
+/* ---------- Synthetic document corpus (stand-in for SEBI filings / earnings transcripts) ---------- */
+const CORPUS = [
+  {ticker:'RELIANCE', title:'Q1 FY27 Earnings Call — Retail & Jio segment commentary', sentiment:0.5, risk:['capex intensity in new energy'], text:'Management guided retail same-store growth of 9-11% for the coming two quarters and flagged continued heavy capex in the new energy business, which will keep near-term free cash flow tight even as segment EBITDA margins expanded 140bps.'},
+  {ticker:'RELIANCE', title:'SEBI Corporate Filing — Related Party Transaction Disclosure', sentiment:-0.1, risk:['related-party transaction scrutiny'], text:'The company disclosed a related-party transaction with an affiliate entity for tower infrastructure leasing; the audit committee noted the transaction was on arm\'s-length terms but flagged it for continued monitoring next quarter.'},
+  {ticker:'TCS', title:'Q1 FY27 Earnings Call — Deal pipeline commentary', sentiment:0.6, risk:['discretionary spend softness in BFSI'], text:'Leadership highlighted a record total contract value in the quarter driven by AI-led transformation deals, while acknowledging that discretionary technology spend among North American BFSI clients remains soft relative to a year ago.'},
+  {ticker:'TCS', title:'Analyst Note — Attrition and margin outlook', sentiment:0.2, risk:['wage-hike margin pressure'], text:'Voluntary attrition eased to a multi-year low, which analysts view as supportive of delivery stability, though the upcoming wage-hike cycle is expected to compress margins by roughly 100bps in the following quarter.'},
+  {ticker:'INFY', title:'Q1 FY27 Earnings Call — Guidance revision', sentiment:-0.3, risk:['guidance cut', 'client budget delays'], text:'Management trimmed full-year revenue growth guidance citing delayed decision-making on discretionary budgets among European manufacturing clients, while reiterating that large-deal momentum in cost-takeout engagements remains intact.'},
+  {ticker:'INFY', title:'SEBI Filing — Board approval of buyback', sentiment:0.4, risk:[], text:'The board approved a share buyback programme, which the company stated reflects confidence in medium-term cash generation despite the near-term guidance moderation flagged in the same filing period.'},
+  {ticker:'HDFCBANK', title:'Q1 FY27 Earnings Call — Deposit growth and NIM', sentiment:0.1, risk:['net interest margin compression'], text:'Deposit growth outpaced credit growth for a second consecutive quarter, easing the loan-to-deposit ratio, but net interest margins compressed slightly as the cost of funds continued rising faster than yield on advances.'},
+  {ticker:'HDFCBANK', title:'SEBI Filing — Asset quality disclosure', sentiment:-0.15, risk:['unsecured retail slippage'], text:'Gross non-performing assets in the unsecured retail lending book ticked up modestly quarter-on-quarter, which management attributed to seasoning of a book built up over the last two years rather than a systemic credit issue.'},
+  {ticker:'TATAMOTORS', title:'Q1 FY27 Earnings Call — JLR and domestic CV commentary', sentiment:0.3, risk:['China demand softness for JLR'], text:'JLR reported healthy order books for its newer nameplates even as China wholesale volumes stayed weak, while the domestic commercial vehicle business benefited from early infrastructure-linked freight demand.'},
+  {ticker:'TATAMOTORS', title:'Analyst Note — EV segment competitive pressure', sentiment:-0.25, risk:['EV pricing pressure', 'market share erosion'], text:'The passenger EV segment is seeing intensifying price competition from newer entrants, and analysts flagged that market share could erode further before the refreshed model lineup arrives later in the fiscal year.'},
+  {ticker:'ZOMATO', title:'Q1 FY27 Earnings Call — Quick-commerce investment cycle', sentiment:-0.2, risk:['elevated cash burn in quick commerce'], text:'Management confirmed the quick-commerce business will stay in a heavy investment phase for at least three more quarters, with elevated dark-store rollout costs weighing on consolidated profitability despite food-delivery segment profitability improving.'},
+  {ticker:'ZOMATO', title:'SEBI Filing — Promoter/insider transaction disclosure', sentiment:-0.1, risk:['insider share sale'], text:'A block deal disclosure showed a pre-IPO institutional investor trimming its holding, which the filing notes was a portfolio-rebalancing sale unrelated to any change in company guidance.'},
+];
+
+/* ---------- Risk profile parameters ---------- */
+const PROFILES = {
+  conservative: {
+    label:'Conservative', tag:'capital preservation',
+    weights:{momentum:0.20, volume:0.20, fundamental:0.60},
+    buyThreshold:0.45, sellThreshold:-0.30,
+    maxPosition:0.02,
+    requireFundamentalNonNegative:true,
+  },
+  moderate: {
+    label:'Moderate', tag:'balanced growth',
+    weights:{momentum:0.35, volume:0.25, fundamental:0.40},
+    buyThreshold:0.25, sellThreshold:-0.25,
+    maxPosition:0.05,
+    requireFundamentalNonNegative:false,
+  },
+  aggressive: {
+    label:'Aggressive', tag:'momentum-seeking',
+    weights:{momentum:0.55, volume:0.30, fundamental:0.15},
+    buyThreshold:0.12, sellThreshold:-0.15,
+    maxPosition:0.10,
+    requireFundamentalNonNegative:false,
+  },
+};
+
+/* ---------- App state ---------- */
+let state = {
+  tickerIdx:0,
+  profile:'moderate',
+  degraded:false,
+  portfolio:[
+    {symbol:'RELIANCE', qty:12, avg:2790},
+    {symbol:'TCS', qty:4, avg:3820},
+    {symbol:'ZOMATO', qty:220, avg:245},
+  ],
+  log:[],
+  lastMarket:null, // cached generated market snapshot per ticker, reused for compare
+};
+
+/* ---------- Market data simulation ---------- */
+function generateMarket(ticker){
+  const seed = hashStr(ticker.symbol + Date.now() + Math.random());
+  const rnd = mulberry32(seed);
+  const momentum5d = (rnd()*16 - 8);               // -8% .. +8%
+  const maCross = rnd() > 0.5;                     // 5MA above 20MA
+  const volumeRatio = 0.3 + rnd()*2.9;              // 0.3x .. 3.2x avg
+  const priceChangePct = (rnd()*4 - 2);             // today's move
+  const ltp = +(ticker.basePrice * (1 + momentum5d/100)).toFixed(2);
+  return {symbol:ticker.symbol, momentum5d, maCross, volumeRatio, priceChangePct, ltp};
+}
+
+/* ---------- Agent 1: Momentum / Technical ---------- */
+function momentumAgent(market){
+  const m = market.momentum5d;
+  let label, score;
+  if(m > 4){label='STRONG BUY'; score=0.8;}
+  else if(m > 1.2){label='BUY'; score=0.45;}
+  else if(m > -1.2){label='HOLD'; score=0;}
+  else if(m > -4){label='SELL'; score=-0.45;}
+  else {label='STRONG SELL'; score=-0.8;}
+  const confidence = Math.min(95, Math.round(55 + Math.abs(m)*4 + (market.maCross===(m>0)?8:-4)));
+  const reasoning = `5-day price momentum of ${m.toFixed(2)}% with the 5-period moving average ${market.maCross?'above':'below'} the 20-period average ${market.maCross===(m>0) ? 'confirms' : 'partially contradicts'} the directional read, giving a ${label.toLowerCase()} classification.`;
+  return {agent:'Momentum Agent', dim:'Price momentum', label, score, confidence, reasoning};
+}
+
+/* ---------- Agent 2: Volume Anomaly ---------- */
+function volumeAgent(market, degraded){
+  if(degraded){
+    return {agent:'Volume Anomaly Agent', dim:'Volume behaviour', label:'FEED UNAVAILABLE', score:null, confidence:null,
+      reasoning:'Live volume feed did not respond after 3 retry attempts (simulated outage). This agent is excluded from synthesis rather than backfilled with an assumed value, to avoid producing an uncited signal.', unavailable:true};
+  }
+  const r = market.volumeRatio;
+  let label, score;
+  if(r > 2.0){label='ANOMALOUS SPIKE'; score = market.momentum5d>=0? 0.5 : -0.5;}
+  else if(r > 1.4){label='ELEVATED'; score = market.momentum5d>=0? 0.25 : -0.25;}
+  else if(r < 0.6){label='THIN LIQUIDITY'; score=-0.15;}
+  else {label='NORMAL RANGE'; score=0;}
+  const confidence = Math.min(92, Math.round(50 + Math.abs(r-1)*22));
+  const reasoning = `Traded volume is running at ${r.toFixed(2)}x the 20-day average. ${r>1.4? 'This level of participation typically corroborates the concurrent price move rather than being noise.' : r<0.6 ? 'Thin participation reduces confidence that the current price move will hold.' : 'Volume is within a normal band and adds limited independent signal.'}`;
+  return {agent:'Volume Anomaly Agent', dim:'Volume behaviour', label, score, confidence, reasoning};
+}
+
+/* ---------- Agent 3: Fundamentals / RAG ---------- */
+function fundamentalAgent(ticker){
+  const docs = CORPUS.filter(d=>d.ticker===ticker.symbol);
+  // simple retrieval: score by overlap with a fixed query against filing text (keyword-based; swap-in point for a real vector DB)
+  const query = 'recent earnings guidance risk factors outlook';
+  const qTokens = query.toLowerCase().split(' ');
+  let best=null, bestScore=-1;
+  docs.forEach(d=>{
+    const text = d.text.toLowerCase();
+    let s = 0;
+    qTokens.forEach(t=>{ if(text.includes(t)) s+=1; });
+    s += d.title.toLowerCase().includes('earnings')?1:0;
+    if(s>bestScore){bestScore=s; best=d;}
+  });
+  const label = best.sentiment>0.25?'CONSTRUCTIVE':best.sentiment<-0.1?'CAUTIONARY':'MIXED';
+  const confidence = Math.min(90, Math.round(60 + Math.abs(best.sentiment)*45));
+  const reasoning = `Retrieved and grounded on "${best.title}" (relevance score ${bestScore}/5 against query terms). Extracted sentiment ${best.sentiment.toFixed(2)} (−1 to +1 scale)${best.risk.length? '; flagged risk factor(s): ' + best.risk.join(', ') : '; no material risk flags in this document'}.`;
+  return {agent:'Fundamentals · RAG Agent', dim:'Filings & earnings sentiment', label, score:best.sentiment, confidence, reasoning, citation:best};
+}
+
+/* ---------- Synthesis layer ---------- */
+function synthesize(agents, profileKey, market){
+  const profile = PROFILES[profileKey];
+  const active = agents.filter(a=>!a.unavailable);
+  let weightSum = 0, scoreSum = 0;
+  active.forEach(a=>{
+    const w = profile.weights[a.dim.includes('momentum')||a.agent.includes('Momentum')?'momentum':a.agent.includes('Volume')?'volume':'fundamental'];
+    weightSum += w; scoreSum += w*a.score;
+  });
+  let composite = weightSum>0 ? scoreSum/weightSum : 0;
+  const degraded = agents.length !== active.length;
+  const fundamental = agents.find(a=>a.agent.includes('Fundamentals'));
+
+  let rec;
+  if(profile.requireFundamentalNonNegative && fundamental && fundamental.score < -0.05){
+    rec = 'HOLD';
+  } else if(composite >= profile.buyThreshold){
+    rec = composite >= profile.buyThreshold*1.8 ? 'STRONG BUY' : 'BUY';
+  } else if(composite <= profile.sellThreshold){
+    rec = composite <= profile.sellThreshold*1.8 ? 'STRONG SELL' : 'SELL';
+  } else {
+    rec = 'HOLD';
+  }
+
+  let confidence = Math.round(active.reduce((s,a)=>s+a.confidence,0)/active.length);
+  if(degraded) confidence = Math.max(30, confidence - 18);
+
+  const suggestedWeight = rec.includes('BUY') ? profile.maxPosition : rec.includes('SELL') ? 0 : profile.maxPosition*0.4;
+
+  return {rec, composite, confidence, degraded, profile, suggestedWeight, active};
+}
+
+/* ---------- Rendering helpers ---------- */
+function fmtPct(x){return (x>=0?'+':'')+x.toFixed(2)+'%';}
+function recClass(rec){return rec.includes('BUY')?'rec-buy':rec.includes('SELL')?'rec-sell':'rec-hold';}
+function recColor(rec){return rec.includes('BUY')?'var(--green)':rec.includes('SELL')?'var(--red)':'var(--amber)';}
+
+function renderProfileOpts(){
+  const box = document.getElementById('profileOpts');
+  box.innerHTML='';
+  Object.entries(PROFILES).forEach(([key,p])=>{
+    const div = document.createElement('div');
+    div.className = 'profile-opt' + (state.profile===key?' active':'');
+    div.innerHTML = `<span>${p.label}</span><span class="tag">${p.tag}</span>`;
+    div.onclick = ()=>{state.profile=key; renderProfileOpts();};
+    box.appendChild(div);
+  });
+}
+
+function renderTickerSelect(){
+  const sel = document.getElementById('tickerSelect');
+  sel.innerHTML = TICKERS.map((t,i)=>`<option value="${i}">${t.symbol} — ${t.name}</option>`).join('');
+  sel.value = state.tickerIdx;
+  sel.onchange = ()=>{state.tickerIdx = +sel.value; state.lastMarket=null; updateHeader(); clearAnalysis();};
+}
+
+function updateHeader(){
+  const t = TICKERS[state.tickerIdx];
+  document.getElementById('tName').textContent = `${t.symbol}`;
+  document.getElementById('tMeta').textContent = `${t.name} · ${t.sector}`;
+  const m = state.lastMarket || generateMarket(t);
+  state.lastMarket = m;
+  document.getElementById('tPrice').textContent = '₹' + m.ltp.toLocaleString('en-IN');
+  const chgEl = document.getElementById('tChg');
+  chgEl.textContent = fmtPct(m.priceChangePct) + ' today';
+  chgEl.className = 'chg mono ' + (m.priceChangePct>0.05?'up':m.priceChangePct<-0.05?'down':'flat');
+}
+
+function clearAnalysis(){
+  document.getElementById('agentGrid').innerHTML='';
+  document.getElementById('synthWrap').innerHTML='';
+  document.getElementById('compareWrap').innerHTML='';
+  document.getElementById('banner').innerHTML='';
+}
+
+function renderWatchlist(){
+  const box = document.getElementById('watchlistBox');
+  box.innerHTML = TICKERS.map(t=>`<div class="watchlist-row"><span>${t.symbol}</span><span class="mono" style="color:var(--muted)">₹${t.basePrice.toLocaleString('en-IN')}</span></div>`).join('');
+}
+
+function renderPortfolio(){
+  const body = document.getElementById('portfolioBody');
+  let total=0;
+  const rows = state.portfolio.map(h=>{
+    const t = TICKERS.find(x=>x.symbol===h.symbol);
+    const ltp = t.basePrice;
+    const value = ltp*h.qty;
+    total += value;
+    return {...h, ltp, value};
+  });
+  body.innerHTML = rows.map(r=>`<tr><td>${r.symbol}</td><td>${r.qty}</td><td>${r.avg.toLocaleString('en-IN')}</td><td>${r.ltp.toLocaleString('en-IN')}</td><td>${Math.round(r.value).toLocaleString('en-IN')}</td><td id="wt-${r.symbol}"></td></tr>`).join('');
+  rows.forEach(r=>{ document.getElementById('wt-'+r.symbol).textContent = ((r.value/total)*100).toFixed(1)+'%'; });
+  document.getElementById('portTotal').textContent = '₹'+Math.round(total).toLocaleString('en-IN');
+  const maxShare = Math.max(...rows.map(r=>r.value))/total*100;
+  document.getElementById('portConc').textContent = maxShare.toFixed(1)+'%';
+  return maxShare;
+}
+
+function agentCardHTML(a){
+  const color = a.unavailable ? 'var(--faint)' : (a.score>0.05?'var(--green)':a.score<-0.05?'var(--red)':'var(--amber)');
+  return `<div class="agent-card ${a.unavailable?'disabled':''}">
+    <div class="accent" style="background:${color}"></div>
+    <div class="role">${a.dim.toUpperCase()}</div>
+    <h3>${a.agent}</h3>
+    <div class="verdict" style="color:${color}">${a.label}</div>
+    ${a.confidence!==null ? `<div class="conf">confidence ${a.confidence}%</div><div class="conf-bar"><i style="width:${a.confidence}%;background:${color}"></i></div>` : '<div class="conf">—</div>'}
+    <p>${a.reasoning}</p>
+    ${a.citation ? `<div class="cite"><b>${a.citation.title}</b><br>Cited excerpt basis for sentiment score ${a.citation.sentiment.toFixed(2)}.</div>` : ''}
+  </div>`;
+}
+
+function runAnalysis(profileKeyOverride){
+  const t = TICKERS[state.tickerIdx];
+  const profileKey = profileKeyOverride || state.profile;
+  const market = state.lastMarket || generateMarket(t);
+  state.lastMarket = market;
+
+  const a1 = momentumAgent(market);
+  const a2 = volumeAgent(market, state.degraded);
+  const a3 = fundamentalAgent(t);
+  const agents = [a1,a2,a3];
+  const synth = synthesize(agents, profileKey, market);
+
+  return {t, market, agents, synth, profileKey};
+}
+
+function renderRun(result){
+  const {t, market, agents, synth, profileKey} = result;
+  document.getElementById('compareWrap').innerHTML='';
+
+  document.getElementById('banner').innerHTML = synth.degraded
+    ? `<div class="banner">DEGRADED MODE — volume signal unavailable this session. Synthesis proceeded on ${synth.active.length} of 3 agents; confidence was widened downward rather than backfilling a guessed volume reading.</div>`
+    : '';
+
+  document.getElementById('agentGrid').innerHTML = agents.map(agentCardHTML).join('');
+
+  const p = PROFILES[profileKey];
+  document.getElementById('synthWrap').innerHTML = `
+    <div class="synth">
+      <div class="synth-top">
+        <h3>Synthesis Agent — ${p.label} investor profile</h3>
+        <div class="synth-verdict" style="color:${recColor(synth.rec)}">${synth.rec}</div>
+      </div>
+      <div class="synth-body">
+        Weighted composite score of <b class="mono">${synth.composite.toFixed(2)}</b> (fundamentals weighted ${(p.weights.fundamental*100).toFixed(0)}%, momentum ${(p.weights.momentum*100).toFixed(0)}%, volume ${(p.weights.volume*100).toFixed(0)}% for this profile) against a buy threshold of ${p.buyThreshold} and sell threshold of ${p.sellThreshold} yields <b>${synth.rec}</b> on ${t.symbol} at ₹${market.ltp.toLocaleString('en-IN')}.
+        Suggested position sizing for this profile: up to <b class="mono">${(synth.suggestedWeight*100).toFixed(1)}%</b> of portfolio value.
+      </div>
+      <ul class="synth-chain">
+        ${agents.map(a=>`<li>${a.agent}: ${a.unavailable?'excluded (feed unavailable)':a.label+' · '+a.confidence+'% confidence'}</li>`).join('')}
+      </ul>
+      <div class="synth-foot">
+        <div>COMPOSITE SCORE<b>${synth.composite.toFixed(2)}</b></div>
+        <div>SYNTHESIS CONFIDENCE<b>${synth.confidence}%</b></div>
+        <div>AGENTS ACTIVE<b>${synth.active.length}/3</b></div>
+        <div>MAX POSITION (PROFILE)<b>${(p.maxPosition*100).toFixed(0)}%</b></div>
+      </div>
+    </div>`;
+}
+
+function logRun(result, latencyMs){
+  const {t, synth, profileKey} = result;
+  const conc = renderPortfolio();
+  const row = {
+    time: new Date().toLocaleTimeString('en-IN',{hour12:false}),
+    symbol: t.symbol,
+    profile: PROFILES[profileKey].label,
+    rec: synth.rec,
+    conf: synth.confidence+'%',
+    latency: latencyMs+' ms',
+    conc: conc.toFixed(1)+'%',
+  };
+  state.log.unshift(row);
+  if(state.log.length>25) state.log.pop();
+  renderLog();
+}
+
+function renderLog(){
+  const body = document.getElementById('logBody');
+  const empty = document.getElementById('logEmpty');
+  if(state.log.length===0){ body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  body.innerHTML = state.log.map(r=>`<tr><td>${r.time}</td><td>${r.symbol}</td><td>${r.profile}</td><td class="${recClass(r.rec)}">${r.rec}</td><td>${r.conf}</td><td>${r.latency}</td><td>${r.conc}</td></tr>`).join('');
+}
+
+function renderCompare(){
+  const t = TICKERS[state.tickerIdx];
+  const market = state.lastMarket || generateMarket(t);
+  state.lastMarket = market;
+  const a1 = momentumAgent(market), a2 = volumeAgent(market, state.degraded), a3 = fundamentalAgent(t);
+  const agents = [a1,a2,a3];
+  const rows = Object.keys(PROFILES).map(key=>({key, synth: synthesize(agents, key, market)}));
+
+  document.getElementById('agentGrid').innerHTML = agents.map(agentCardHTML).join('');
+  document.getElementById('synthWrap').innerHTML = `<div class="section-label" style="margin-top:4px;">SAME MARKET SNAPSHOT · IDENTICAL AGENT OUTPUTS · DIFFERENT INVESTOR PROFILES</div>`;
+  document.getElementById('compareWrap').innerHTML = `<div class="compare-grid">
+    ${rows.map(r=>`<div class="compare-card">
+        <h4>${PROFILES[r.key].label.toUpperCase()}</h4>
+        <div class="v" style="color:${recColor(r.synth.rec)}">${r.synth.rec}</div>
+        <div class="sub">composite ${r.synth.composite.toFixed(2)} · confidence ${r.synth.confidence}% · max position ${(PROFILES[r.key].maxPosition*100).toFixed(0)}%</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ---------- Wire up ---------- */
+document.getElementById('sessId').textContent = 'SIM-' + Math.floor(Math.random()*90000+10000);
+
+document.getElementById('runBtn').onclick = ()=>{
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent='Running agents…';
+  state.degraded = document.getElementById('degradedToggle').checked;
+  const latency = Math.round(420 + Math.random()*760);
+  setTimeout(()=>{
+    const result = runAnalysis();
+    renderRun(result);
+    logRun(result, latency);
+    btn.disabled = false; btn.textContent='Run multi-agent analysis';
+  }, latency);
+};
+
+document.getElementById('compareBtn').onclick = ()=>{
+  state.degraded = document.getElementById('degradedToggle').checked;
+  renderCompare();
+};
+
+renderTickerSelect();
+renderProfileOpts();
+renderWatchlist();
+updateHeader();
+renderPortfolio();
+renderLog();
+</script>
+</body>
+</html>
