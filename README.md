@@ -1,2 +1,0 @@
-# zenex
-hackathon hackverse
