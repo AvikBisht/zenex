@@ -1,7 +1,7 @@
 🚀 ZENEX presents ZENEX FinTech
 🤖 AI-Powered Multi-Agent Market Intelligence
 
-ZENEX FinTech — Turning market data into intelligent insights.
+ZENEX FinTech, Turning market data into intelligent insights.
 
 💡 About ZENEX FinTech
 
