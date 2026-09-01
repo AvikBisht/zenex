@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zenex — Multi-Agent Market Intelligence (PS-01)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6FA;
+    --surface:#FFFFFF;
+    --border:#E3E6EE;
+    --ink:#161B24;
+    --ink-soft:#5B6472;
+    --ink-faint:#94A0AF;
+    --brand:#1D3557;
+    --brand-soft:#E9EDF4;
+    --accent:#146C6A;
+    --accent-soft:#E3F1EF;
+    --buy:#0F8A5F;
+    --buy-soft:#E5F6EE;
+    --sell:#B3261E;
+    --sell-soft:#FBEAE9;
+    --amber:#96660A;
+    --amber-soft:#FBF1DC;
+    --radius:12px;
+    --radius-pill:999px;
+    font-size:15px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft);}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+  /* ---------- Top nav ---------- */
+  .topnav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:11px;}
+  .brand-mark{
+    width:32px;height:32px;border-radius:8px;
+    background:var(--brand);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;
+    font-family:'IBM Plex Serif',serif;
+  }
+  .brand-name{font-family:'IBM Plex Serif',serif;font-weight:600;font-size:18px;letter-spacing:-0.01em;color:var(--brand);}
+  .brand-sub{font-size:12px;color:var(--ink-faint);margin-left:8px;padding-left:8px;border-left:1px solid var(--border);}
+  .nav-right{display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-soft);}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--buy);display:inline-block;margin-right:6px;box-shadow:0 0 0 3px var(--buy-soft);}
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:272px 1fr;
+    gap:20px;
+    padding:20px 28px 40px;
+    align-items:start;
+  }
+  @media (max-width:1180px){ .layout{grid-template-columns:1fr;} }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+  .card-pad{padding:18px;}
+  .card-title{font-size:13px;font-weight:600;color:var(--ink-soft);margin:0 0 12px;}
+  .card:hover{box-shadow:0 2px 14px rgba(22,27,36,0.04);}
+
+  /* ---------- Left rail ---------- */
+  .rail-section{margin-bottom:16px;}
+  .field-label{font-size:11.5px;color:var(--ink-faint);margin-bottom:5px;display:block;}
+  select.select-input{
+    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:10px;
+    background:var(--bg);color:var(--ink);font-size:12.5px;font-family:inherit;font-weight:500;margin-bottom:12px;
+  }
+  select.select-input:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+
+  .watchlist-item{ display:flex;align-items:center;justify-content:space-between; padding:10px 12px;border-radius:10px;cursor:pointer; font-size:13.5px; transition:background .15s ease; }
+  .watchlist-item:hover{background:var(--bg);}
+  .watchlist-item.active{background:var(--accent-soft);}
+  .wl-name{font-weight:600;}
+  .wl-meta{font-size:11px;color:var(--ink-faint);}
+  .wl-chg{font-weight:600;font-size:12.5px;font-family:'IBM Plex Mono',monospace;}
+  .up{color:var(--buy);}
+  .down{color:var(--sell);}
+  .wl-remove{
+    width:20px;height:20px;border-radius:6px;border:none;background:transparent;color:var(--ink-faint);
+    font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;
+  }
+  .watchlist-item:hover .wl-remove{display:flex;}
+  .watchlist-item:hover .wl-chg{display:none;}
+
+  .risk-select{display:flex;gap:6px;margin-bottom:12px;}
+  .risk-btn{
+    flex:1;padding:8px 4px;border-radius:9px;border:1px solid var(--border);
+    background:var(--surface);font-size:11.5px;font-weight:600;color:var(--ink-soft);
+    cursor:pointer;text-align:center;transition:transform .12s ease;
+  }
+  .risk-btn:hover{transform:translateY(-1px);}
+  .risk-btn.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;margin-top:6px;gap:10px;}
+  .switch{position:relative;width:38px;height:22px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#D9DCE3;border-radius:999px;cursor:pointer;transition:.15s;}
+  .slider:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+  input:checked + .slider{background:var(--amber);}
+  input:checked + .slider:before{transform:translateX(16px);}
+
+  .search-row{position:relative;margin-bottom:12px;}
+  .search-input{
+    width:100%;padding:9px 34px 9px 12px;border:1px solid var(--border);border-radius:10px;
+    font-size:12.5px;background:var(--bg);color:var(--ink);font-family:inherit;
+  }
+  .search-input:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+  .search-icon{position:absolute;right:11px;top:9px;font-size:13px;color:var(--ink-faint);pointer-events:none;}
+  .search-results{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(22,27,36,0.1);
+    z-index:30;overflow:hidden;display:none;max-height:260px;overflow-y:auto;
+  }
+  .search-results.show{display:block;}
+  .search-result-item{padding:9px 12px;font-size:12.5px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;}
+  .search-result-item:hover{background:var(--bg);}
+  .search-empty{padding:12px;font-size:11.5px;color:var(--ink-faint);text-align:center;}
+  .exch-tag{font-size:10px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;}
+
+  .perf-row{display:flex;justify-content:space-between;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--border);}
+  .perf-row:last-child{border-bottom:none;}
+  .perf-val{font-weight:600;font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Center: price header ---------- */
+  .price-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;}
+  .ticker-name{font-size:21px;font-weight:700;letter-spacing:-0.01em;font-family:'IBM Plex Serif',serif;color:var(--brand);}
+  .ticker-sector{font-size:12.5px;color:var(--ink-faint);margin-top:2px;}
+  .price-now{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;}
+  .price-chg{font-size:13.5px;font-weight:600;margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+  .data-badge{ font-size:11px;padding:4px 10px;border-radius:var(--radius-pill); background:var(--bg);color:var(--ink-soft);border:1px solid var(--border);white-space:nowrap; }
+
+  .stat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px;}
+  .stat-chip{border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:var(--bg);}
+  .stat-chip .lbl{font-size:10px;color:var(--ink-faint);margin-bottom:3px;}
+  .stat-chip .val{font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1.3;}
+  @media (max-width:900px){ .stat-strip{grid-template-columns:repeat(2,1fr);} }
+
+  .range-tabs{display:flex;gap:6px;margin-top:14px;}
+  .range-flex{display:flex;align-items:center;}
+  .range-tab{ padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ink-faint); cursor:pointer;border:1px solid transparent; }
+  .range-tab.active{background:var(--bg);color:var(--ink);border-color:var(--border);}
+  canvas#priceChart{max-height:220px;}
+
+  .refresh-btn{
+    display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);
+    background:var(--surface);font-size:12px;font-weight:600;color:var(--ink-soft);cursor:pointer;margin-left:auto;
+  }
+  .refresh-btn:hover{background:var(--bg);color:var(--ink);}
+  .refresh-btn .spin{display:inline-block;}
+  .refresh-btn.loading .spin{animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Agent cards ---------- */
+  .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media (max-width:820px){.agent-grid{grid-template-columns:1fr;}}
+  .agent-card{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--bg);cursor:pointer;}
+  .agent-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .agent-icon-name{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;}
+  .agent-icon{ width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent); display:flex;align-items:center;justify-content:center;font-size:12px; }
+  .agent-conf{font-size:11px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;}
+  .agent-signal{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;margin-bottom:8px;letter-spacing:.2px;}
+  .sig-buy{background:var(--buy-soft);color:var(--buy);}
+  .sig-sell{background:var(--sell-soft);color:var(--sell);}
+  .sig-hold{background:var(--amber-soft);color:var(--amber);}
+  .sig-off{background:var(--border);color:var(--ink-faint);}
+  .bar-track{height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:8px 0;}
+  .bar-fill{height:100%;border-radius:999px;transition:width .4s ease;}
+  .agent-reason{font-size:11.5px;color:var(--ink-soft);line-height:1.5;max-height:32px;overflow:hidden;transition:max-height .25s ease;}
+  .agent-card.expanded .agent-reason{max-height:200px;}
+  .expand-hint{font-size:10px;color:var(--ink-faint);margin-top:6px;}
+  .citation-box{
+    display:none;margin-top:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.5;
+  }
+  .agent-card.expanded .citation-box{display:block;}
+  .mini-chart{height:70px;margin-top:8px;}
+
+  /* ---------- Recommendation banner ---------- */
+  .rec-banner{ display:flex;align-items:center;justify-content:space-between; padding:16px 18px;border-radius:12px;margin-top:14px;flex-wrap:wrap;gap:14px; }
+  .rec-label{font-size:21px;font-weight:700;font-family:'IBM Plex Serif',serif;}
+  .rec-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .rec-conf-wrap{text-align:right;}
+  .rec-conf-num{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;}
+  .rec-conf-label{font-size:11px;color:var(--ink-faint);}
+  .citations{font-size:11px;color:var(--ink-faint);margin-top:10px;}
+  .rec-figures{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;}
+  .rec-figure .lbl{font-size:10.5px;color:var(--ink-faint);}
+  .rec-figure .val{font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Future aspects ---------- */
+  .future-card{margin-top:18px;}
+  .future-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .catalyst-tag{font-size:11.5px;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:var(--radius-pill);}
+  .future-thesis{font-size:12.5px;color:var(--ink-soft);line-height:1.55;margin-bottom:10px;}
+  .scenario-legend{display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--ink-soft);}
+  .scenario-legend span{display:flex;align-items:center;gap:6px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  /* ---------- Reasoning trace ---------- */
+  .trace-log{ font-family:'IBM Plex Mono',monospace; font-size:11.5px;line-height:1.7;color:var(--ink-soft); max-height:150px;overflow-y:auto; }
+  .trace-log .t-head{color:var(--ink);font-weight:600;}
+
+  .fade-in{animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  /* Toasts */
+  .toast-stack{position:fixed;bottom:20px;right:20px;z-index:100;display:flex;flex-direction:column;gap:8px;}
+  .toast{
+    background:var(--ink);color:#fff;padding:11px 16px;border-radius:10px;font-size:12.5px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;
+    animation:toastIn .25s ease;min-width:220px;
+  }
+  .toast.success{background:#0D6E4F;}
+  .toast.info{background:#26344F;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .shortcut-hint{font-size:10.5px;color:var(--ink-faint);text-align:center;margin-top:8px;}
+  kbd{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px;}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="brand">
+    <div class="brand-mark">Z</div>
+    <div class="brand-name">Zenex</div>
+    <div class="brand-sub">PS-01 · Global Multi-Agent Market Desk</div>
+  </div>
+  <div class="nav-right">
+    <span><span class="status-dot"></span>Session log active</span>
+    <span id="navClock" class="mono">--:--:--</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT RAIL -->
+  <div>
+    <div class="card card-pad rail-section">
+      <p class="card-title">Search &amp; watchlist</p>
+      <div class="search-row">
+        <input class="search-input" id="tickerSearch" type="text" placeholder="Search company or ticker…" autocomplete="off">
+        <span class="search-icon">⌕</span>
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <div id="watchlist"></div>
+    </div>
+
+    <div class="card card-pad rail-section">
+      <p class="card-title">Analysis configuration</p>
+      <label class="field-label">Risk profile</label>
+      <div class="risk-select" id="riskSelect">
+        <div class="risk-btn" data-risk="Conservative">Cons.</div>
+        <div class="risk-btn active" data-risk="Moderate">Mod.</div>
+        <div class="risk-btn" data-risk="Aggressive">Aggr.</div>
+      </div>
+      <label class="field-label">Investment horizon</label>
+      <select class="select-input" id="horizonSelect">
+        <option value="Intraday">Intraday</option>
+        <option value="Swing" selected>30-day swing</option>
+        <option value="Long-term">Multi-quarter hold</option>
+      </select>
+      <div class="toggle-row">
+        <span>Simulate degraded feed</span>
+        <label class="switch">
+          <input type="checkbox" id="degradedToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <p class="card-title">Portfolio snapshot</p>
+      <div class="perf-row"><span>Invested</span><span class="perf-val">₹1,24,500</span></div>
+      <div class="perf-row"><span>Current value</span><span class="perf-val" id="portCurrent">₹1,31,180</span></div>
+      <div class="perf-row"><span>P&amp;L</span><span class="perf-val up" id="portPnl">+₹6,680 (5.4%)</span></div>
+      <div class="perf-row"><span>Sector concentration</span><span class="perf-val" id="portConc">--</span></div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div>
+    <div class="card card-pad">
+      <div class="price-header">
+        <div>
+          <div class="ticker-name" id="tName">RELIANCE</div>
+          <div class="ticker-sector" id="tSector">Energy &amp; Retail · NSE</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="price-now" id="tPrice">₹0.00</div>
+          <div class="price-chg" id="tChg">+0.00 (0.00%)</div>
+        </div>
+        <div class="data-badge" id="dataBadge">live</div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-chip"><div class="lbl">Latency</div><div class="val" id="statLatency">-- ms</div></div>
+        <div class="stat-chip"><div class="lbl">Confidence</div><div class="val" id="statConf">--%</div></div>
+        <div class="stat-chip"><div class="lbl">Risk score</div><div class="val" id="statRisk">--%</div></div>
+        <div class="stat-chip"><div class="lbl">Target / stop</div><div class="val" id="statTargetStop" style="font-size:12px;">-- / --</div></div>
+        <div class="stat-chip"><div class="lbl">Projected return</div><div class="val" id="statRoi">--</div></div>
+      </div>
+
+      <div class="range-tabs range-flex" id="rangeTabsRow">
+        <div id="rangeTabs" style="display:flex;gap:6px;">
+          <div class="range-tab" data-days="10">10D</div>
+          <div class="range-tab active" data-days="30">30D</div>
+          <div class="range-tab" data-days="60">60D</div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn"><span class="spin">↻</span> Re-run analysis</button>
+      </div>
+
+      <div style="margin-top:14px;">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="margin-top:18px;">
+      <p class="card-title">Live agent signals</p>
+      <div class="agent-grid" id="agentGrid"></div>
+
+      <div class="rec-banner" id="recBanner">
+        <div>
+          <div class="rec-label" id="recLabel">—</div>
+          <div class="rec-sub" id="recSub">Run analysis to generate a recommendation.</div>
+          <div class="rec-figures">
+            <div class="rec-figure"><div class="lbl">Target</div><div class="val" id="recTarget">--</div></div>
+            <div class="rec-figure"><div class="lbl">Stop loss</div><div class="val" id="recStop">--</div></div>
+            <div class="rec-figure"><div class="lbl">Projected return</div><div class="val" id="recRoi">--</div></div>
+          </div>
+          <div class="citations" id="recCitations"></div>
+        </div>
+        <div class="rec-conf-wrap">
+          <div class="rec-conf-num" id="recConf">--</div>
+          <div class="rec-conf-label">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-pad future-card">
+      <div class="future-head">
+        <p class="card-title" style="margin:0;">Future aspects · scenario projection</p>
+        <span class="catalyst-tag" id="catalystTag">Catalyst: pending run</span>
+      </div>
+      <div class="future-thesis" id="futureThesis">Run analysis to generate a scenario-based thesis for the selected horizon.</div>
+      <div style="height:150px;"><canvas id="futureChart"></canvas></div>
+      <div class="scenario-legend">
+        <span><span class="dot" style="background:var(--buy);"></span>Bull case</span>
+        <span><span class="dot" style="background:var(--accent);"></span>Base case</span>
+        <span><span class="dot" style="background:var(--sell);"></span>Bear case</span>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="margin-top:18px;">
+      <p class="card-title">Agent reasoning trace</p>
+      <div class="trace-log" id="traceLog">Waiting for first analysis…</div>
+      <div class="shortcut-hint">Press <kbd>R</kbd> to re-run analysis · click any agent card to expand</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =====================================================================
+   DATA LAYER
+===================================================================== */
+
+/* Curated global universe spanning six exchanges. Fundamentals text below
+   is original demo copy written for this simulation — not sourced from
+   any real filing — and every "citation id" is a synthetic reference. */
+const COMPANIES = [
+ {t:"RELIANCE.NS", n:"Reliance Industries Ltd", ex:"NSE", cur:"₹", sector:"Energy & Retail", base:2980, risk:24, fund:"CONSTRUCTIVE", fundText:"Oil-to-chemicals margins expanded on lower feedstock costs, while the retail arm added floor space and digital-commerce order volume grew through the quarter. New-energy capex stays elevated but is funded mostly from internal accruals.", cite:"SEBI-Q3-2026-RIL-014", catalyst:"Q4 earnings call in 12 days"},
+ {t:"TCS.NS", n:"Tata Consultancy Services", ex:"NSE", cur:"₹", sector:"IT Services", base:4120, risk:20, fund:"NEUTRAL", fundText:"Management described North American discretionary spend as steady but not accelerating, with BFSI deal wins offsetting softness in retail accounts. Margins held flat through continued cost discipline.", cite:"TCS-IR-2026-Q1", catalyst:"US Fed rate decision in 8 days"},
+ {t:"INFY.NS", n:"Infosys Ltd", ex:"NSE", cur:"₹", sector:"IT Services", base:1830, risk:22, fund:"NEUTRAL", fundText:"The deal pipeline in AI-led transformation work stayed healthy, but clients in manufacturing and retail verticals trimmed near-term budgets. Full-year guidance was maintained with a cautious tone.", cite:"INFY-EARN-2026-Q1", catalyst:"Analyst day in 20 days"},
+ {t:"HDFCBANK.NS", n:"HDFC Bank Ltd", ex:"NSE", cur:"₹", sector:"Banking", base:1640, risk:31, fund:"CAUTIONARY", fundText:"Net interest margin compressed further as deposit growth continued to lag credit expansion post-merger. Provisioning coverage held steady but management flagged near-term margin pressure.", cite:"HDFC-REG-2026-09", catalyst:"RBI policy review in 19 days"},
+ {t:"ICICIBANK.NS", n:"ICICI Bank Ltd", ex:"NSE", cur:"₹", sector:"Banking", base:1265, risk:19, fund:"CONSTRUCTIVE", fundText:"Asset quality improved with slippages at a multi-year low, and the retail loan book grew ahead of system credit growth. Provisioning buffers were strengthened despite the improving trend.", cite:"ICICI-REG-2026-Q2", catalyst:"Q2 results in 15 days"},
+ {t:"TATAMOTORS.NS", n:"Tata Motors Ltd", ex:"NSE", cur:"₹", sector:"Automobiles", base:965, risk:34, fund:"NEUTRAL", fundText:"JLR export volumes stayed strong and the domestic EV segment gained share, but input-cost inflation modestly pressured consolidated margins this quarter.", cite:"TTM-EARN-2026-Q1", catalyst:"Auto expo showcase in 9 days"},
+ {t:"SUNPHARMA.NS", n:"Sun Pharmaceutical Industries", ex:"NSE", cur:"₹", sector:"Pharmaceuticals", base:1780, risk:18, fund:"CONSTRUCTIVE", fundText:"Specialty portfolio revenue grew on new US product launches, and the R&D pipeline advanced two molecules into late-stage trials this quarter.", cite:"SUNPH-REG-2026-08", catalyst:"Regulatory filing update in 25 days"},
+ {t:"ITC.NS", n:"ITC Ltd", ex:"NSE", cur:"₹", sector:"FMCG", base:465, risk:15, fund:"NEUTRAL", fundText:"FMCG-other segment volumes grew steadily while cigarette volumes stayed flat on tax parity. Hotels and paperboard both posted modest margin gains.", cite:"ITC-EARN-2026-Q1", catalyst:"Board meeting in 14 days"},
+ {t:"BAJFINANCE.NS", n:"Bajaj Finance Ltd", ex:"NSE", cur:"₹", sector:"NBFC", base:7150, risk:29, fund:"NEUTRAL", fundText:"Assets under management grew above guidance, though management flagged rising early-stage delinquencies in the unsecured consumer book worth monitoring.", cite:"BAF-REG-2026-Q1", catalyst:"Investor call in 11 days"},
+ {t:"MARUTI.NS", n:"Maruti Suzuki India Ltd", ex:"NSE", cur:"₹", sector:"Automobiles", base:12480, risk:21, fund:"CONSTRUCTIVE", fundText:"SUV mix continued to improve realizations, and export volumes to Africa and Latin America grew double digits. Commodity costs eased modestly quarter over quarter.", cite:"MSIL-EARN-2026-Q1", catalyst:"New model launch in 6 days"},
+ {t:"HINDUNILVR.NS", n:"Hindustan Unilever Ltd", ex:"NSE", cur:"₹", sector:"FMCG", base:2510, risk:14, fund:"NEUTRAL", fundText:"Volume growth stayed muted in rural markets while urban demand held steady. Gross margins expanded slightly on softer input costs, partly reinvested in pricing.", cite:"HUL-REG-2026-Q1", catalyst:"Q1 results in 17 days"},
+ {t:"LT.NS", n:"Larsen & Toubro Ltd", ex:"NSE", cur:"₹", sector:"Infrastructure", base:3580, risk:26, fund:"CONSTRUCTIVE", fundText:"Order inflows accelerated on infrastructure and hydrocarbon awards, pushing the order book to a record high, with execution pace improving on better working-capital management.", cite:"LT-REG-2026-08", catalyst:"Order book update in 10 days"},
+ {t:"AAPL", n:"Apple Inc.", ex:"NASDAQ", cur:"$", sector:"Consumer Technology", base:225, risk:16, fund:"CONSTRUCTIVE", fundText:"On-device AI features drove a stronger-than-expected upgrade cycle in North America and China, with services revenue continuing to grow faster than hardware.", cite:"SEC-10Q-AAPL-2026-Q3", catalyst:"Developer event in 11 days"},
+ {t:"MSFT", n:"Microsoft Corporation", ex:"NASDAQ", cur:"$", sector:"Cloud & Software", base:448, risk:15, fund:"CONSTRUCTIVE", fundText:"Cloud AI-related revenue crossed a new run-rate threshold and enterprise Copilot seat growth accelerated, though data-center capital spending remains a margin headwind.", cite:"SEC-10Q-MSFT-2026-Q3", catalyst:"Cloud infrastructure review in 14 days"},
+ {t:"NVDA", n:"NVIDIA Corporation", ex:"NASDAQ", cur:"$", sector:"Semiconductors", base:128, risk:38, fund:"CONSTRUCTIVE", fundText:"Data-center revenue grew triple digits year over year on next-generation GPU rack shipments, though management flagged tightening supply of advanced packaging capacity.", cite:"SEC-10Q-NVDA-2026-Q2", catalyst:"AI keynote in 6 days"},
+ {t:"TSLA", n:"Tesla, Inc.", ex:"NASDAQ", cur:"$", sector:"Automobiles", base:215, risk:42, fund:"CAUTIONARY", fundText:"Automotive gross margin compressed further on pricing actions, and regulatory approval for autonomous ride-hailing remains pending in several key jurisdictions.", cite:"SEC-10Q-TSLA-2026-Q2", catalyst:"Software release in 4 days"},
+ {t:"GOOGL", n:"Alphabet Inc.", ex:"NASDAQ", cur:"$", sector:"Internet & Advertising", base:172, risk:20, fund:"NEUTRAL", fundText:"Search advertising growth held steady while cloud revenue accelerated. Management noted elevated AI infrastructure spend will continue through the next several quarters.", cite:"SEC-10Q-GOOGL-2026-Q2", catalyst:"Regulatory ruling update in 22 days"},
+ {t:"AMZN", n:"Amazon.com, Inc.", ex:"NASDAQ", cur:"$", sector:"E-commerce & Cloud", base:198, risk:23, fund:"CONSTRUCTIVE", fundText:"AWS operating margin expanded on improved capacity utilization, while retail-segment logistics cost per unit declined for a third consecutive quarter.", cite:"SEC-10Q-AMZN-2026-Q2", catalyst:"Membership event in 18 days"},
+ {t:"META", n:"Meta Platforms, Inc.", ex:"NASDAQ", cur:"$", sector:"Internet & Advertising", base:512, risk:27, fund:"NEUTRAL", fundText:"Ad pricing improved on better AI-driven targeting, but management guided to a substantial step-up in infrastructure capex for the coming year.", cite:"SEC-10Q-META-2026-Q2", catalyst:"Product showcase in 13 days"},
+ {t:"TSM", n:"Taiwan Semiconductor Mfg.", ex:"NYSE", cur:"$", sector:"Semiconductors", base:172, risk:25, fund:"CONSTRUCTIVE", fundText:"Leading-edge node yields improved and Arizona fab construction stayed ahead of schedule, supporting management's upgraded full-year revenue outlook.", cite:"TSM-ANNUAL-2026", catalyst:"Semiconductor summit in 9 days"},
+ {t:"JPM", n:"JPMorgan Chase & Co.", ex:"NYSE", cur:"$", sector:"Banking", base:238, risk:19, fund:"CONSTRUCTIVE", fundText:"Net interest income beat expectations on higher-for-longer rates, and investment-banking fee income recovered on a pickup in deal activity.", cite:"SEC-10Q-JPM-2026-Q2", catalyst:"Investor day in 30 days"},
+ {t:"XOM", n:"Exxon Mobil Corporation", ex:"NYSE", cur:"$", sector:"Energy", base:118, risk:24, fund:"NEUTRAL", fundText:"Upstream production volumes grew on new project startups, though refining margins narrowed from the prior quarter's elevated levels.", cite:"SEC-10Q-XOM-2026-Q2", catalyst:"OPEC+ policy decision in 13 days"},
+ {t:"WMT", n:"Walmart Inc.", ex:"NYSE", cur:"$", sector:"Retail", base:88, risk:13, fund:"CONSTRUCTIVE", fundText:"Comparable sales grew across both US stores and e-commerce, with advertising and membership income continuing to lift overall operating margin.", cite:"SEC-10Q-WMT-2026-Q2", catalyst:"Holiday guidance update in 21 days"},
+ {t:"SHEL", n:"Shell plc", ex:"LSE", cur:"£", sector:"Energy", base:2850, risk:22, fund:"CONSTRUCTIVE", fundText:"Integrated gas cash generation stayed robust and the buyback programme was extended, though renewables-segment returns remain below target.", cite:"LSE-RNS-SHEL-2026", catalyst:"OPEC+ policy decision in 13 days"},
+ {t:"AZN", n:"AstraZeneca PLC", ex:"LSE", cur:"£", sector:"Pharmaceuticals", base:12100, risk:17, fund:"CONSTRUCTIVE", fundText:"Oncology pipeline revenue grew across key markets and a late-stage lung-cancer trial met its primary endpoint, supporting a raised full-year outlook.", cite:"LSE-RNS-AZN-2026", catalyst:"Oncology conference in 17 days"},
+ {t:"HSBA", n:"HSBC Holdings plc", ex:"LSE", cur:"£", sector:"Banking", base:695, risk:23, fund:"NEUTRAL", fundText:"Asia-focused fee income grew while Western-hemisphere lending margins narrowed, in line with management's prior guidance on regional mix shift.", cite:"LSE-RNS-HSBA-2026", catalyst:"Interim results in 16 days"},
+ {t:"MC.PA", n:"LVMH Moet Hennessy Louis Vuitton", ex:"EURONEXT", cur:"€", sector:"Luxury Goods", base:740, risk:20, fund:"NEUTRAL", fundText:"Fashion and leather-goods growth stabilized in Asia-Pacific after several soft quarters, with operating margin holding near historical highs.", cite:"EURONEXT-AR-MC-2026", catalyst:"Fashion week in 15 days"},
+ {t:"TTE.PA", n:"TotalEnergies SE", ex:"EURONEXT", cur:"€", sector:"Energy", base:64, risk:21, fund:"CONSTRUCTIVE", fundText:"LNG portfolio volumes grew on new project ramp-ups, and renewables capacity additions stayed on schedule for the full-year target.", cite:"EURONEXT-AR-TTE-2026", catalyst:"Capital markets day in 24 days"},
+ {t:"7203.T", n:"Toyota Motor Corporation", ex:"TSE", cur:"¥", sector:"Automobiles", base:2650, risk:18, fund:"CONSTRUCTIVE", fundText:"Global hybrid demand grew sharply and a solid-state battery pilot line entered its next validation phase, supporting a constructive multi-year outlook.", cite:"TSE-FILING-7203-2026", catalyst:"Technology expo in 8 days"},
+ {t:"6758.T", n:"Sony Group Corporation", ex:"TSE", cur:"¥", sector:"Consumer Electronics", base:3120, risk:20, fund:"NEUTRAL", fundText:"Gaming-segment engagement stayed resilient while the imaging-sensor division saw softer near-term demand from a key smartphone customer.", cite:"TSE-FILING-6758-2026", catalyst:"Console lineup update in 19 days"},
+];
+const COMPANY_MAP = {};
+COMPANIES.forEach(c=>COMPANY_MAP[c.t]=c);
+
+const POSITIVE_WORDS = ["strong","grew","growth","improv","strength","steady","robust","accelerat","record","raised","upgraded"];
+const NEGATIVE_WORDS = ["cautio","softness","pressur","compress","narrow","inflation","lagg","pending","modest","flagged"];
+
+const RISK_WEIGHTS = {
+  Conservative: {momentum:0.10, sentiment:0.20, rag:0.40, risk:0.30},
+  Moderate:     {momentum:0.30, sentiment:0.25, rag:0.25, risk:0.20},
+  Aggressive:   {momentum:0.50, sentiment:0.25, rag:0.15, risk:0.10},
+};
+
+const AGENT_META = [
+  {key:"momentum", name:"Technical Agent", icon:"📈"},
+  {key:"sentiment", name:"Sentiment & Flow Agent", icon:"📰"},
+  {key:"rag", name:"Fundamentals (RAG) Agent", icon:"📄"},
+  {key:"risk", name:"Risk Factor Profiler", icon:"🛡"},
+];
+
+let state = {
+  ticker: "RELIANCE.NS",
+  risk: "Moderate",
+  horizon: "Swing",
+  degraded: false,
+  watchlist: ["RELIANCE.NS","TCS.NS","AAPL","MSFT","TSLA","HDFCBANK.NS"],
+  days: 30,
+  sessionCount: 0,
+};
+
+/* Seeded PRNG (mulberry32) so results are deterministic per ticker */
+function hashSeed(str){ let h=0; for(let i=0;i<str.length;i++){ h=(Math.imul(31,h)+str.charCodeAt(i))|0; } return h>>>0; }
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rngFor(ticker){ return mulberry32(hashSeed(ticker)); }
+
+function syntheticSeries(ticker, days, degraded){
+  const c = COMPANY_MAP[ticker];
+  const rng = rngFor(ticker);
+  let price = c ? c.base : 100 + rng()*900;
+  const prices = [], volumes = [];
+  for (let i=0;i<days;i++){
+    const drift = degraded ? [-0.045, 0.045] : [-0.02, 0.02];
+    price *= 1 + (rng() * (drift[1]-drift[0]) + drift[0]);
+    prices.push(Math.round(price*100)/100);
+    volumes.push(Math.round(rng()*(3e6-0.5e6)+0.5e6));
+  }
+  return {prices, volumes};
+}
+
+function runMomentumAgent(ticker, degraded, days){
+  if (degraded){
+    const {prices} = syntheticSeries(ticker, days, true);
+    return {score:0, confidence:0.15, reasoning:"Exchange market-data stream timed out. Technical agent is operating in a degraded state and cannot compute a reliable signal.", source:"degraded-feed", prices};
+  }
+  const {prices, volumes} = syntheticSeries(ticker, days, false);
+  const momentum = (prices[prices.length-1]-prices[0])/prices[0];
+  const ema = prices.slice(-Math.min(10,prices.length)).reduce((a,b)=>a+b,0)/Math.min(10,prices.length);
+  const avgVol = volumes.slice(0,-1).reduce((a,b)=>a+b,0)/(volumes.length-1 || 1);
+  const volZ = (volumes[volumes.length-1]-avgVol)/(avgVol+1e-6);
+  const score = Math.max(-1, Math.min(1, momentum*5));
+  const confidence = Math.max(0.2, Math.min(0.95, Math.abs(momentum)*8 + Math.abs(volZ)*0.3));
+  const last = prices[prices.length-1];
+  const trend = last>=ema ? "above" : "below";
+  return {
+    score:+score.toFixed(2), confidence:+confidence.toFixed(2),
+    reasoning:`${prices.length}-day momentum ${(momentum*100).toFixed(1)}%; price trading ${trend} its ${Math.min(10,prices.length)}-period average (${ema.toFixed(2)}). Volume vs. average ${(volZ*100>=0?"+":"")}${(volZ*100).toFixed(0)}%.`,
+    source:"live", prices,
+  };
+}
+
+function wordScore(text){
+  const lower = text.toLowerCase();
+  const pos = POSITIVE_WORDS.reduce((s,w)=>s+(lower.split(w).length-1),0);
+  const neg = NEGATIVE_WORDS.reduce((s,w)=>s+(lower.split(w).length-1),0);
+  return {pos, neg};
+}
+
+function runSentimentAgent(ticker){
+  const c = COMPANY_MAP[ticker];
+  if (!c) return {score:0, confidence:0.2, reasoning:"No sentiment source found for this instrument.", source:null, flows:[0,0,0,0]};
+  const {pos, neg} = wordScore(c.fundText);
+  const total = pos+neg;
+  const score = total===0 ? 0 : (pos-neg)/total;
+  const confidence = Math.min(0.9, 0.35 + total*0.08);
+  const flowBase = score*450;
+  const flows = [flowBase, flowBase*0.55, flowBase*-0.25, flowBase*0.35].map(v=>Math.round(v));
+  return {
+    score:+score.toFixed(2), confidence:+confidence.toFixed(2),
+    reasoning:`${pos} positive / ${neg} cautionary signal terms detected across the latest disclosure for ${c.n}. Institutional flow reading is ${score>0.1?"net positive":score<-0.1?"net negative":"broadly neutral"}.`,
+    source: c.cite, flows,
+  };
+}
+
+function runRagAgent(ticker){
+  const c = COMPANY_MAP[ticker];
+  if (!c) return {score:0, confidence:0.1, reasoning:"No matching filing or transcript retrieved.", source:null, excerpt:null};
+  const map = {CONSTRUCTIVE:0.55, NEUTRAL:0.0, CAUTIONARY:-0.55};
+  const jitter = (rngFor(ticker+"rag")()-0.5)*0.1;
+  const score = Math.max(-1,Math.min(1, map[c.fund]+jitter));
+  return {
+    score:+score.toFixed(2), confidence:0.8,
+    reasoning:`Retrieved disclosure [${c.cite}] classified ${c.fund.toLowerCase()}: ${c.fundText.slice(0,110)}…`,
+    source:c.cite, excerpt:c.fundText,
+  };
+}
+
+function runRiskAgent(ticker, degraded){
+  const c = COMPANY_MAP[ticker];
+  const risk = c ? c.risk : 30;
+  const rng = rngFor(ticker+"risk");
+  const dims = {
+    Volatility: Math.min(100, Math.round(risk*1.1 + rng()*8)),
+    Valuation: Math.min(100, Math.round(risk*0.8 + rng()*10)),
+    Liquidity: Math.min(100, Math.round(risk*0.6 + rng()*10)),
+    "Reg. risk": Math.min(100, Math.round(risk*0.9 + rng()*10)),
+    "Macro risk": Math.min(100, Math.round(risk*0.75 + rng()*10)),
+  };
+  const score = Math.max(-1, Math.min(1, -(risk-25)/40));
+  return {
+    score:+score.toFixed(2), confidence: degraded ? 0.7 : 0.88,
+    reasoning:`Composite risk score of ${risk}% across volatility, valuation, liquidity, regulatory and macro factors${degraded?" (fundamentals-only view while the market feed is degraded)":""}.`,
+    source:"risk-model", risk, dims,
+  };
+}
+
+function synthesize(results, risk, horizon){
+  const w = RISK_WEIGHTS[risk];
+  const weighted = results.momentum.score*w.momentum + results.sentiment.score*w.sentiment + results.rag.score*w.rag + results.risk.score*w.risk;
+  let avgConf = results.momentum.confidence*w.momentum + results.sentiment.confidence*w.sentiment + results.rag.confidence*w.rag + results.risk.confidence*w.risk;
+  const scores = [results.momentum.score, results.sentiment.score, results.rag.score, results.risk.score];
+  const conflicting = Math.max(...scores) > 0.25 && Math.min(...scores) < -0.25;
+  let label;
+  if (conflicting){ label = "HOLD (conflicting signals)"; avgConf *= 0.6; }
+  else if (weighted > 0.4) label = "STRONG BUY";
+  else if (weighted > 0.15) label = "BUY";
+  else if (weighted < -0.4) label = "STRONG SELL";
+  else if (weighted < -0.15) label = "SELL";
+  else label = "HOLD";
+  const citations = [results.momentum.source, results.sentiment.source, results.rag.source].filter(s=>s && s!=="degraded-feed");
+  return { label, score:+weighted.toFixed(2), confidence:+Math.min(0.95, Math.max(0.05, avgConf)).toFixed(2), conflicting, citations };
+}
+
+function computeTargetStop(lastPrice, label, riskPct, horizon){
+  const horizonMult = horizon==="Intraday" ? 0.4 : horizon==="Long-term" ? 1.8 : 1;
+  const band = (0.035 + (riskPct/100)*0.06) * horizonMult;
+  let target, stop;
+  if (label.includes("BUY")){ target = lastPrice*(1+band); stop = lastPrice*(1-band*0.6); }
+  else if (label.includes("SELL")){ target = lastPrice*(1-band); stop = lastPrice*(1+band*0.6); }
+  else { target = lastPrice*(1+band*0.3); stop = lastPrice*(1-band*0.3); }
+  const roi = ((target-lastPrice)/lastPrice*100);
+  return {target, stop, roi};
+}
+
+function riskConcentration(watchlist){
+  if (!watchlist.length) return 0;
+  const sectors = watchlist.map(t=> (COMPANY_MAP[t]||{}).sector || "Other");
+  const counts = {};
+  sectors.forEach(s=>counts[s]=(counts[s]||0)+1);
+  const top = Math.max(...Object.values(counts));
+  return top/watchlist.length;
+}
+
+function scoreColor(score){
+  if (score > 0.15) return "#0F8A5F";
+  if (score < -0.15) return "#B3261E";
+  return "#96660A";
+}
+function sigClass(score, off){
+  if (off) return "sig-off";
+  if (score > 0.15) return "sig-buy";
+  if (score < -0.15) return "sig-sell";
+  return "sig-hold";
+}
+function sigLabel(score, off){
+  if (off) return "UNAVAILABLE";
+  if (score > 0.15) return "BUY";
+  if (score < -0.15) return "SELL";
+  return "HOLD";
+}
+
+/* =====================================================================
+   UI RENDERING
+===================================================================== */
+let priceChart, futureChart;
+
+function fmtCur(n, cur){ return cur + n.toLocaleString("en-IN", {maximumFractionDigits:2}); }
+
+function renderWatchlist(){
+  const el = document.getElementById("watchlist");
+  el.innerHTML = "";
+  state.watchlist.forEach(t=>{
+    const c = COMPANY_MAP[t];
+    const {prices} = syntheticSeries(t, 30, false);
+    const chg = ((prices[prices.length-1]-prices[0])/prices[0]*100);
+    const row = document.createElement("div");
+    row.className = "watchlist-item fade-in" + (t===state.ticker ? " active":"");
+    row.innerHTML = `
+      <div>
+        <div class="wl-name">${t.replace(/\.(NS|PA|T)$/,"")}</div>
+        <div class="wl-meta">${c?c.sector:"—"} · ${c?c.ex:"—"}</div>
+      </div>
+      <div class="wl-chg ${chg>=0?"up":"down"}">${chg>=0?"+":""}${chg.toFixed(2)}%</div>
+      <button class="wl-remove" data-remove="${t}" title="Remove from watchlist">✕</button>
+    `;
+    row.addEventListener("click", (e)=>{
+      if (e.target.closest(".wl-remove")) return;
+      state.ticker = t; runAnalysis(); renderWatchlist();
+    });
+    row.querySelector(".wl-remove").addEventListener("click", (e)=>{
+      e.stopPropagation();
+      if (state.watchlist.length <= 1){ showToast("Keep at least one ticker on your watchlist.", "info"); return; }
+      state.watchlist = state.watchlist.filter(x=>x!==t);
+      if (state.ticker===t){ state.ticker = state.watchlist[0]; runAnalysis(); }
+      renderWatchlist(); renderPortfolio();
+      showToast(`Removed ${t.replace(/\.(NS|PA|T)$/,"")} from watchlist`, "info");
+    });
+    el.appendChild(row);
+  });
+}
+
+function renderPriceHeader(prices){
+  const c = COMPANY_MAP[state.ticker];
+  document.getElementById("tName").textContent = state.ticker.replace(/\.(NS|PA|T)$/,"");
+  document.getElementById("tSector").textContent = c ? `${c.sector} · ${c.ex}` : "—";
+  const last = prices[prices.length-1];
+  const first = prices[0];
+  const chg = last-first;
+  const chgPct = (chg/first*100);
+  const cur = c ? c.cur : "₹";
+  const priceEl = document.getElementById("tPrice");
+  const prevVal = parseFloat((priceEl.textContent||"0").replace(/[^0-9.]/g,"")) || last;
+  animateNumber(priceEl, prevVal, last, cur, 2);
+  const chgEl = document.getElementById("tChg");
+  chgEl.textContent = `${chg>=0?"+":""}${chg.toFixed(2)} (${chgPct>=0?"+":""}${chgPct.toFixed(2)}%)`;
+  chgEl.className = "price-chg " + (chg>=0?"up":"down");
+  document.getElementById("dataBadge").textContent = state.degraded ? "synthetic · degraded" : "live";
+}
+
+function renderChart(prices){
+  const ctx = document.getElementById("priceChart");
+  const up = prices[prices.length-1] >= prices[0];
+  const lineColor = up ? "#0F8A5F" : "#B3261E";
+  const gradientFill = ctx.getContext("2d").createLinearGradient(0,0,0,220);
+  gradientFill.addColorStop(0, up ? "rgba(15,138,95,0.16)" : "rgba(179,38,30,0.16)");
+  gradientFill.addColorStop(1, "rgba(255,255,255,0)");
+
+  if (priceChart) priceChart.destroy();
+  priceChart = new Chart(ctx, {
+    type: "line",
+    data: { labels: prices.map((_,i)=>i+1), datasets: [{ data: prices, borderColor: lineColor, backgroundColor: gradientFill, fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      plugins: { legend: {display:false}, tooltip:{ backgroundColor:"#161B24", padding:10, cornerRadius:8, callbacks:{ label: c => c.parsed.y.toFixed(2) } }},
+      scales: { x: { display:false }, y: { grid:{color:"#EFF1F5"}, ticks:{color:"#94A0AF", font:{size:10}} } }
+    }
+  });
+}
+
+function renderAgents(results){
+  const grid = document.getElementById("agentGrid");
+  grid.innerHTML = "";
+
+  AGENT_META.forEach(meta=>{
+    const r = results[meta.key];
+    const off = r.source === "degraded-feed";
+    const norm = ((r.score+1)/2*100);
+    const card = document.createElement("div");
+    card.className = "agent-card fade-in";
+
+    // Every card gets an always-visible mini chart in the space below the reasoning text.
+    let chartId = "";
+    let chartHeight = 74;
+    // Extra detail text (source excerpt) stays hidden until the card is tapped.
+    let citationHtml = "";
+
+    if (meta.key === "momentum"){
+      chartId = "momentumChart";
+    } else if (meta.key === "sentiment"){
+      chartId = "flowChart";
+      if (r.source) citationHtml = `<div class="citation-box">Source disclosure: ${r.source}</div>`;
+    } else if (meta.key === "rag"){
+      chartId = "ragChart";
+      if (r.excerpt) citationHtml = `<div class="citation-box">"${r.excerpt}"<br><strong>— ${r.source}</strong></div>`;
+    } else if (meta.key === "risk"){
+      chartId = "riskChart";
+      chartHeight = 110;
+    }
+
+    card.innerHTML = `
+      <div class="agent-head">
+        <div class="agent-icon-name"><span class="agent-icon">${meta.icon}</span>${meta.name}</div>
+        <div class="agent-conf">${Math.round(r.confidence*100)}% conf</div>
+      </div>
+      <span class="agent-signal ${sigClass(r.score, off)}">${sigLabel(r.score, off)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${norm}%; background:${off?'#94A0AF':scoreColor(r.score)}"></div></div>
+      <div class="agent-reason">${r.reasoning}</div>
+      <div class="mini-chart" style="height:${chartHeight}px;"><canvas id="${chartId}"></canvas></div>
+      ${citationHtml ? `<div class="expand-hint">Tap to see detail</div>` : ""}
+      ${citationHtml}
+    `;
+    card.addEventListener("click", ()=>{
+      card.classList.toggle("expanded");
+    });
+    grid.appendChild(card);
+
+    // Populate the chart now that its canvas is in the DOM.
+    if (meta.key === "momentum" && r.prices) renderMomentumChart(r.prices, off);
+    else if (meta.key === "sentiment" && r.flows) renderFlowChart(r.flows);
+    else if (meta.key === "rag") renderRagChart(r.score, off);
+    else if (meta.key === "risk" && r.dims) renderRiskChart(r.dims);
+  });
+}
+
+let momentumChart, flowChart, ragChart, riskChart;
+
+function renderMomentumChart(prices, off){
+  const el = document.getElementById("momentumChart");
+  if (!el) return;
+  if (momentumChart) momentumChart.destroy();
+  const up = prices[prices.length-1] >= prices[0];
+  const color = off ? "#94A0AF" : (up ? "#0F8A5F" : "#B3261E");
+  momentumChart = new Chart(el, {
+    type:"line",
+    data:{ labels:prices.map((_,i)=>i+1), datasets:[{ data:prices, borderColor:color, backgroundColor:"transparent", fill:false, tension:.3, pointRadius:0, borderWidth:2 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:"#161B24", padding:8, cornerRadius:8, callbacks:{ label:c=>c.parsed.y.toFixed(2) } } },
+      scales:{ x:{display:false}, y:{display:false} }
+    }
+  });
+}
+
+function renderRagChart(score, off){
+  const el = document.getElementById("ragChart");
+  if (!el) return;
+  if (ragChart) ragChart.destroy();
+  const color = off ? "#94A0AF" : scoreColor(score);
+  ragChart = new Chart(el, {
+    type:"bar",
+    data:{ labels:["Fundamentals"], datasets:[{ data:[score], backgroundColor:[color], borderRadius:4, barThickness:22 }] },
+    options:{
+      indexAxis:"y",
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:"#161B24", padding:8, cornerRadius:8, callbacks:{ label:c=>`Score ${c.parsed.x>=0?"+":""}${c.parsed.x.toFixed(2)}` } } },
+      scales:{
+        x:{ min:-1, max:1, grid:{color:"#EFF1F5"}, ticks:{color:"#94A0AF", font:{size:9}} },
+        y:{ display:false }
+      }
+    }
+  });
+}
+
+function renderFlowChart(flows){
+  const el = document.getElementById("flowChart");
+  if (!el) return;
+  if (flowChart) flowChart.destroy();
+  flowChart = new Chart(el, {
+    type:"bar",
+    data:{ labels:["Inst. flow","Funds","Retail","Prop desk"], datasets:[{ data:flows, backgroundColor:["#0F8A5F","#146C6A","#96660A","#1D3557"], borderRadius:4 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:"#94A0AF", font:{size:9}}, grid:{display:false}}, y:{display:false} } }
+  });
+}
+function renderRiskChart(dims){
+  const el = document.getElementById("riskChart");
+  if (!el) return;
+  if (riskChart) riskChart.destroy();
+  riskChart = new Chart(el, {
+    type:"radar",
+    data:{ labels:Object.keys(dims), datasets:[{ label:"Risk", data:Object.values(dims), backgroundColor:"rgba(179,38,30,0.15)", borderColor:"#B3261E", pointBackgroundColor:"#B3261E" }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ r:{ grid:{color:"#E3E6EE"}, angleLines:{color:"#E3E6EE"}, ticks:{display:false}, pointLabels:{color:"#5B6472", font:{size:9}} } } }
+  });
+}
+
+function animateNumber(el, from, to, prefix, decimals){
+  const dur = 350, t0 = performance.now();
+  function step(t){
+    const p = Math.min(1, (t-t0)/dur);
+    const eased = 1 - Math.pow(1-p, 3);
+    const val = from + (to-from)*eased;
+    el.textContent = prefix + val.toLocaleString("en-IN", {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+    if (p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function showToast(msg, kind){
+  const stack = document.getElementById("toastStack");
+  const t = document.createElement("div");
+  t.className = "toast " + (kind||"");
+  t.textContent = msg;
+  stack.appendChild(t);
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transform="translateY(6px)"; setTimeout(()=>t.remove(), 200); }, 2600);
+}
+
+function renderRecommendation(synth, figures, cur){
+  const banner = document.getElementById("recBanner");
+  const color = synth.conflicting ? "#96660A" : scoreColor(synth.score);
+  const soft = synth.conflicting ? "var(--amber-soft)" : (synth.score>0.15?"var(--buy-soft)":synth.score<-0.15?"var(--sell-soft)":"var(--amber-soft)");
+  banner.style.background = soft;
+  document.getElementById("recLabel").textContent = synth.label;
+  document.getElementById("recLabel").style.color = color;
+  document.getElementById("recSub").textContent =
+    (synth.conflicting ? "Conflicting agent signals detected. " : "") +
+    `Weighted score ${synth.score>=0?"+":""}${synth.score} · risk profile: ${state.risk} · horizon: ${state.horizon}`;
+  document.getElementById("recConf").textContent = Math.round(synth.confidence*100)+"%";
+  document.getElementById("recCitations").textContent = "Sources: " + (synth.citations.length ? synth.citations.join(", ") : "no citation available");
+  document.getElementById("recTarget").textContent = fmtCur(figures.target, cur);
+  document.getElementById("recStop").textContent = fmtCur(figures.stop, cur);
+  document.getElementById("recRoi").textContent = `${figures.roi>=0?"+":""}${figures.roi.toFixed(1)}%`;
+}
+
+function renderStatStrip(synth, figures, latencyMs, riskPct, cur){
+  document.getElementById("statLatency").textContent = `${latencyMs} ms`;
+  document.getElementById("statConf").textContent = `${Math.round(synth.confidence*100)}%`;
+  document.getElementById("statRisk").textContent = `${riskPct}%`;
+  document.getElementById("statTargetStop").textContent = `${fmtCur(figures.target, cur)} / ${fmtCur(figures.stop, cur)}`;
+  document.getElementById("statRoi").textContent = `${figures.roi>=0?"+":""}${figures.roi.toFixed(1)}%`;
+}
+
+function renderFuture(results, synth, figures, lastPrice, cur){
+  const c = COMPANY_MAP[state.ticker];
+  const horizonLabels = state.horizon==="Intraday"
+    ? ["Now","+1h","+2h","+3h","+4h"]
+    : state.horizon==="Long-term"
+    ? ["Today","+1mo","+2mo","+3mo","+4mo"]
+    : ["Today","+7d","+14d","+21d","+30d"];
+
+  const bull = [lastPrice, lerp(lastPrice, figures.target, 0.35), lerp(lastPrice, figures.target, 0.6), lerp(lastPrice, figures.target, 0.85), figures.target*1.02];
+  const base = [lastPrice, lerp(lastPrice, (figures.target+figures.stop)/2, 0.3), lerp(lastPrice, (figures.target+figures.stop)/2, 0.55), lerp(lastPrice, (figures.target+figures.stop)/2, 0.8), (figures.target+figures.stop)/2];
+  const bear = [lastPrice, lerp(lastPrice, figures.stop, 0.35), lerp(lastPrice, figures.stop, 0.6), lerp(lastPrice, figures.stop, 0.85), figures.stop*0.98];
+
+  const el = document.getElementById("futureChart");
+  if (futureChart) futureChart.destroy();
+  futureChart = new Chart(el, {
+    type:"line",
+    data:{ labels:horizonLabels, datasets:[
+      {label:"Bull", data:bull, borderColor:"#0F8A5F", borderDash:[4,3], fill:false, pointRadius:0, tension:.3},
+      {label:"Base", data:base, borderColor:"#146C6A", fill:false, pointRadius:0, tension:.3, borderWidth:2.5},
+      {label:"Bear", data:bear, borderColor:"#B3261E", borderDash:[4,3], fill:false, pointRadius:0, tension:.3},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:"#161B24", padding:8, cornerRadius:8}}, scales:{ x:{ticks:{color:"#94A0AF", font:{size:9}}, grid:{display:false}}, y:{grid:{color:"#EFF1F5"}, ticks:{color:"#94A0AF", font:{size:9}}} } }
+  });
+
+  document.getElementById("catalystTag").textContent = "Catalyst: " + (c ? c.catalyst : "no scheduled event on file");
+  document.getElementById("futureThesis").textContent =
+    `AI future thesis (${state.horizon.toLowerCase()}): scenario modelling estimates the price holding a channel of ${fmtCur(Math.min(figures.stop,figures.target),cur)}–${fmtCur(Math.max(figures.stop,figures.target),cur)} around the next scheduled catalyst, weighted toward the ${synth.label.toLowerCase().includes("sell") ? "bear" : synth.label.includes("BUY") ? "bull" : "base"} case under the current agent synthesis.`;
+}
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+function appendTrace(results, synth, latencyMs){
+  const log = document.getElementById("traceLog");
+  const time = new Date().toLocaleTimeString();
+  let block = `<div class="t-head">— ${time} · ${state.ticker} · ${state.risk} · ${state.horizon} —</div>`;
+  AGENT_META.forEach(m=>{
+    const r = results[m.key];
+    block += `[${m.name}] ${r.reasoning} (source: ${r.source||"none"})<br>`;
+  });
+  block += `[Synthesis] → ${synth.label} (conf ${Math.round(synth.confidence*100)}%, latency ${latencyMs}ms)<br><br>`;
+  if (log.textContent.includes("Waiting")) log.innerHTML = "";
+  log.innerHTML += block;
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderPortfolio(){
+  const conc = riskConcentration(state.watchlist);
+  document.getElementById("portConc").textContent = Math.round(conc*100)+"%";
+}
+
+let lastResults = null, lastSynth = null, lastPrices = null, lastFigures = null;
+
+function setLoading(on){
+  const btn = document.getElementById("refreshBtn");
+  const grid = document.getElementById("agentGrid");
+  const banner = document.getElementById("recBanner");
+  if (on){ btn.classList.add("loading"); grid.style.opacity = "0.45"; banner.style.opacity = "0.45"; }
+  else { btn.classList.remove("loading"); grid.style.opacity = "1"; banner.style.opacity = "1"; }
+}
+
+function runAnalysis(){
+  setLoading(true);
+  setTimeout(()=>{
+    const t0 = performance.now();
+    const c = COMPANY_MAP[state.ticker] || {cur:"₹", risk:30, ex:"NSE"};
+    const results = {
+      momentum: runMomentumAgent(state.ticker, state.degraded, state.days),
+      sentiment: runSentimentAgent(state.ticker),
+      rag: runRagAgent(state.ticker),
+      risk: runRiskAgent(state.ticker, state.degraded),
+    };
+    const synth = synthesize(results, state.risk, state.horizon);
+    const latencyMs = Math.round(performance.now()-t0) + Math.round(180+Math.random()*160);
+
+    state.sessionCount++;
+    lastResults = results; lastSynth = synth; lastPrices = results.momentum.prices;
+
+    const lastPrice = lastPrices[lastPrices.length-1];
+    const figures = computeTargetStop(lastPrice, synth.label, c.risk, state.horizon);
+    lastFigures = figures;
+
+    renderPriceHeader(lastPrices);
+    renderChart(lastPrices);
+    renderAgents(results);
+    renderRecommendation(synth, figures, c.cur);
+    renderStatStrip(synth, figures, latencyMs, c.risk, c.cur);
+    renderFuture(results, synth, figures, lastPrice, c.cur);
+    appendTrace(results, synth, latencyMs);
+    setLoading(false);
+  }, 260);
+}
+
+function refreshAll(){ renderWatchlist(); renderPortfolio(); runAnalysis(); }
+
+/* =====================================================================
+   EVENT WIRING
+===================================================================== */
+document.getElementById("riskSelect").addEventListener("click", e=>{
+  const btn = e.target.closest(".risk-btn");
+  if (!btn) return;
+  [...document.querySelectorAll("#riskSelect .risk-btn")].forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  state.risk = btn.dataset.risk;
+  runAnalysis();
+});
+
+document.getElementById("horizonSelect").addEventListener("change", e=>{
+  state.horizon = e.target.value;
+  runAnalysis();
+});
+
+document.getElementById("degradedToggle").addEventListener("change", e=>{
+  state.degraded = e.target.checked;
+  runAnalysis();
+});
+
+document.getElementById("rangeTabs").addEventListener("click", e=>{
+  const tab = e.target.closest(".range-tab");
+  if (!tab) return;
+  [...document.querySelectorAll(".range-tab")].forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  state.days = parseInt(tab.dataset.days);
+  runAnalysis();
+});
+
+/* ---------- Search / add ticker ---------- */
+const searchInput = document.getElementById("tickerSearch");
+const searchResults = document.getElementById("searchResults");
+
+searchInput.addEventListener("input", ()=>{
+  const q = searchInput.value.trim().toUpperCase();
+  if (!q){ searchResults.classList.remove("show"); return; }
+  const matches = COMPANIES
+    .filter(c=> (c.t.includes(q) || c.n.toUpperCase().includes(q)) && !state.watchlist.includes(c.t))
+    .slice(0,8);
+  searchResults.innerHTML = matches.length
+    ? matches.map(c=>`<div class="search-result-item" data-add="${c.t}"><span>${c.t.replace(/\.(NS|PA|T)$/,"")} · ${c.n}</span><span class="exch-tag">${c.ex}</span></div>`).join("")
+    : `<div class="search-empty">No matching ticker in this demo universe</div>`;
+  searchResults.classList.add("show");
+});
+
+searchResults.addEventListener("click", e=>{
+  const item = e.target.closest("[data-add]");
+  if (!item) return;
+  const t = item.dataset.add;
+  state.watchlist.push(t);
+  state.ticker = t;
+  searchInput.value = "";
+  searchResults.classList.remove("show");
+  renderWatchlist(); renderPortfolio(); runAnalysis();
+  showToast(`Added ${t.replace(/\.(NS|PA|T)$/,"")} to watchlist`, "success");
+});
+
+document.addEventListener("click", e=>{
+  if (!e.target.closest(".search-row")) searchResults.classList.remove("show");
+});
+
+/* ---------- Manual refresh + keyboard shortcut ---------- */
+document.getElementById("refreshBtn").addEventListener("click", runAnalysis);
+
+document.addEventListener("keydown", e=>{
+  if (e.key.toLowerCase()==="r" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)){
+    runAnalysis();
+  }
+});
+
+/* Clock */
+setInterval(()=>{
+  document.getElementById("navClock").textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+/* Init */
+refreshAll();
+</script>
+</body>
+</html>
