@@ -37,7 +37,7 @@ Frontend: HTML • CSS • JavaScript
 Visualization: Chart.js
 Development: Git • GitHub
 
-👥 Team ZENEX
+👥 Team ZENEX:
 
 VIT Chennai | Electronics & Communication Engineering | Second Year
 
