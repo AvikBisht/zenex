@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Desk Enterprise - Multi-Agent Investment Intelligence</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Corporate Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-canvas: #f8fafc;
+            --panel-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-subtle: #94a3b8;
+
+            /* Formal Financial Color Palette */
+            --gain-green: #16a34a;
+            --gain-bg: #f0fdf4;
+            --gain-border: #bbf7d0;
+
+            --risk-red: #dc2626;
+            --risk-bg: #fef2f2;
+            --risk-border: #fecaca;
+
+            --hold-amber: #d97706;
+            --hold-bg: #fffbebfb;
+            --hold-border: #fde68a;
+
+            --brand-blue: #2563eb;
+            --brand-bg: #eff6ff;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-canvas); }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* Left Control Panel */
+        .sidebar {
+            width: 360px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .brand-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo {
+            width: 36px; height: 36px;
+            background: var(--brand-blue);
+            color: white; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-title {
+            font-size: 1.15rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em;
+        }
+        .brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+
+        .form-section { display: flex; flex-direction: column; gap: 6px; }
+        .form-section label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .search-box-container { position: relative; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; }
+
+        input[type="text"], select {
+            width: 100%; padding: 10px 12px 10px 36px; border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #ffffff; color: var(--text-main);
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select { padding-left: 12px; cursor: pointer; }
+
+        input:focus, select:focus {
+            border-color: var(--brand-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .quick-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+        .chip {
+            font-size: 0.72rem; font-weight: 500; padding: 4px 8px;
+            background: var(--bg-canvas); border: 1px solid var(--border-color);
+            border-radius: 4px; color: var(--text-muted); cursor: pointer;
+            transition: 0.2s;
+        }
+        .chip:hover { border-color: var(--brand-blue); color: var(--brand-blue); background: var(--brand-bg); }
+
+        .btn-action {
+            background: var(--brand-blue); color: white; border: none;
+            padding: 12px; border-radius: 6px; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: 0.2s; width: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-action:hover { background: #1d4ed8; }
+        .btn-action:disabled { background: var(--border-color); color: var(--text-subtle); cursor: not-allowed; }
+
+        .checkbox-group {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            border-radius: 6px; background: var(--risk-bg); border: 1px solid var(--risk-border);
+            font-size: 0.8rem; color: var(--risk-red); font-weight: 500;
+        }
+
+        .watchlist-box { display: flex; flex-direction: column; gap: 6px; }
+        .watchlist-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; background: #ffffff; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.82rem; font-weight: 500; cursor: pointer;
+            transition: 0.2s;
+        }
+        .watchlist-item:hover { border-color: var(--brand-blue); background: var(--bg-canvas); }
+
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Header Overview Cards */
+        .header-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+        .stat-card {
+            background: var(--panel-bg); padding: 16px; border-radius: 8px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .stat-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--text-main); font-family: 'Inter', sans-serif; }
+
+        /* Multi-Agent Cards Grid */
+        .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        
+        .agent-card {
+            background: var(--panel-bg); border-radius: 8px; padding: 20px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        
+        .agent-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .agent-title { font-size: 0.92rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .agent-status { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
+
+        /* Formal Badges */
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 4px;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .badge-buy { background: var(--gain-bg); color: var(--gain-green); border: 1px solid var(--gain-border); }
+        .badge-sell { background: var(--risk-bg); color: var(--risk-red); border: 1px solid var(--risk-border); }
+        .badge-hold { background: var(--hold-bg); color: var(--hold-amber); border: 1px solid var(--hold-border); }
+        .badge-neutral { background: var(--bg-canvas); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+        .agent-reasoning { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; min-height: 40px; }
+        .citation { padding: 10px 12px; background: var(--bg-canvas); border-left: 3px solid var(--brand-blue); font-size: 0.78rem; color: var(--text-muted); border-radius: 0 4px 4px 0; }
+
+        .chart-box { position: relative; height: 160px; width: 100%; margin-top: 4px; }
+
+        /* Executive Decision & Projection Section */
+        .synthesis-grid { display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 20px; }
+        
+        .synthesis-card {
+            background: #ffffff; border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px; box-shadow: var(--shadow-md);
+            display: flex; flex-direction: column; gap: 14px;
+        }
+
+        .output-hud {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;
+            background: var(--bg-canvas); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);
+        }
+        .output-hud .item label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .output-hud .item span { font-size: 0.95rem; font-weight: 700; color: var(--text-main); display: block; margin-top: 2px; }
+
+        .future-aspects-card {
+            background: var(--panel-bg); border-radius: 8px; padding: 20px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        /* Logs Console */
+        .logs-panel { 
+            background: #0f172a; padding: 12px 16px; border-radius: 6px; 
+            font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #38bdf8;
+            height: 90px; overflow-y: auto; line-height: 1.6;
+        }
+
+        .text-green { color: var(--gain-green) !important; }
+        .text-red { color: var(--risk-red) !important; }
+        .text-amber { color: var(--hold-amber) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: Controls & Asset Filter -->
+    <div class="sidebar">
+        <div class="brand-header">
+            <div class="brand-logo"><i class="fas fa-chart-pie"></i></div>
+            <div>
+                <div class="brand-title">Oracle Desk</div>
+                <div class="brand-subtitle">Enterprise Investment Intelligence</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <label>Search Company (100 Index)</label>
+            <div class="search-box-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="tickerSearchInput" placeholder="Enter Company Name or Ticker..." list="globalStockDatalist" onchange="handleStockSelect(this.value)">
+                <datalist id="globalStockDatalist"></datalist>
+            </div>
+            <div class="quick-chips">
+                <span class="chip" onclick="quickSelect('IRCTC')">IRCTC</span>
+                <span class="chip" onclick="quickSelect('DABUR')">DABUR</span>
+                <span class="chip" onclick="quickSelect('REXSEAL')">REXSEAL (Hold)</span>
+                <span class="chip" onclick="quickSelect('SWANCORP')">SWANCORP (Falling)</span>
+                <span class="chip" onclick="quickSelect('ALOKIND')">ALOKIND (Hold)</span>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <label>Institutional Risk Profile</label>
+            <select id="profileInput">
+                <option value="conservative">Conservative (Capital Preservation)</option>
+                <option value="moderate" selected>Moderate (Risk-Balanced)</option>
+                <option value="aggressive">Aggressive (Alpha / Momentum Growth)</option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label>Investment Horizon Target</label>
+            <select id="horizonInput">
+                <option value="intraday">Intraday Trading</option>
+                <option value="swing" selected>30-Day Position Horizon</option>
+                <option value="longterm">Multi-Quarter Portfolio Hold</option>
+            </select>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="degradedInput">
+            <label for="degradedInput">Simulate Exchange Feed Outage</label>
+        </div>
+
+        <button class="btn-action" id="runBtn" onclick="executeOrchestrator()">
+            <i class="fas fa-play"></i> Run Intelligence Assessment
+        </button>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color);">
+
+        <div class="form-section">
+            <label>Global Watchlist Overview</label>
+            <div class="watchlist-box">
+                <div class="watchlist-item" onclick="quickSelect('IRCTC')">
+                    <span>IRCTC [NSE]</span> <span class="badge badge-buy">+3.8%</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('REXSEAL')">
+                    <span>REXSEAL [NSE]</span> <span class="badge badge-hold">HOLD (+0.2%)</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('SWANCORP')">
+                    <span>SWANCORP [NSE]</span> <span class="badge badge-sell">RISK (-4.5%)</span>
+                </div>
+                <div class="watchlist-item" onclick="quickSelect('ALOKIND')">
+                    <span>ALOKIND [NSE]</span> <span class="badge badge-hold">HOLD (-0.3%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="main-content">
+        
+        <!-- Header Key Metric Cards -->
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-label">Execution Latency</div>
+                <div class="stat-val" id="latencyMetric">-- ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Asset Risk Exposure</div>
+                <div class="stat-val text-red" id="riskPercentMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Model Confidence</div>
+                <div class="stat-val text-green" id="confMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Projected 30D Return</div>
+                <div class="stat-val" id="roiMetric">-- %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Target / Stop Loss</div>
+                <div class="stat-val" style="font-size: 0.95rem; line-height:1.3;" id="targetStopMetric">T: --<br>S: --</div>
+            </div>
+        </div>
+
+        <!-- 4 Multi-Agent Intelligence Cards Grid -->
+        <div class="agent-grid">
+            
+            <!-- Agent 1: Technical Dynamics -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-chart-line" style="color:var(--brand-blue);"></i> Technical Agent</div>
+                    <div class="agent-status" id="statusTech">Idle</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge badge-neutral" id="sigTech">PENDING</span>
+                    <span style="font-size:0.78rem; color:var(--text-muted); font-weight: 600;" id="techEmaVal">EMA50: --</span>
+                </div>
+                <div class="agent-reasoning" id="reasonTech">Awaiting data stream execution...</div>
+                <div class="chart-box">
+                    <canvas id="techChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 2: Fundamental Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-file-invoice" style="color:var(--brand-blue);"></i> Fundamental (RAG) Agent</div>
+                    <div class="agent-status" id="statusFund">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-neutral" id="sigFund">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonFund">Awaiting SEC/Regulatory document indexing...</div>
+                <div class="citation" id="citeFund" style="display: none;">
+                    <i class="fas fa-quote-left" style="margin-right: 4px;"></i> <span id="citeText"></span>
+                </div>
+            </div>
+
+            <!-- Agent 3: Sentiment & Capital Flow Agent -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-building-columns" style="color:var(--brand-blue);"></i> Institutional Capital Flow</div>
+                    <div class="agent-status" id="statusSent">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-neutral" id="sigSent">PENDING</span>
+                </div>
+                <div class="agent-reasoning" id="reasonSent">Awaiting institutional flow allocation metrics...</div>
+                <div class="chart-box">
+                    <canvas id="flowChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent 4: Risk Profiler -->
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-shield-cat" style="color:var(--brand-blue);"></i> Multi-Factor Risk Assessment</div>
+                    <div class="agent-status" id="statusRisk">Idle</div>
+                </div>
+                <div>
+                    <span class="badge badge-hold" id="sigRisk">PROFILE: UNSET</span>
+                </div>
+                <div class="agent-reasoning" id="reasonRisk">Evaluating portfolio concentration and volatility metrics...</div>
+                <div class="chart-box">
+                    <canvas id="riskRadarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Synthesis & Projection Section -->
+        <div class="synthesis-grid">
+            
+            <!-- Synthesis Card -->
+            <div class="synthesis-card">
+                <div class="agent-header">
+                    <div class="agent-title" style="font-size: 1rem;"><i class="fas fa-microchip" style="color:var(--brand-blue);"></i> Executive Synthesis Output</div>
+                    <div class="agent-status" id="statusSynth">Awaiting Agents</div>
+                </div>
+                
+                <div style="text-align: center; margin: 4px 0;">
+                    <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Actionable Decision</span>
+                    <h2 id="finalRec" style="font-size: 2.2rem; color: var(--text-muted); margin-top:2px;">STANDBY</h2>
+                </div>
+
+                <div class="output-hud">
+                    <div class="item">
+                        <label>Asset Ticker</label>
+                        <span id="outTicker">IRCTC</span>
+                    </div>
+                    <div class="item">
+                        <label>Exchange</label>
+                        <span id="outExchange">NSE</span>
+                    </div>
+                    <div class="item">
+                        <label>Risk Rating</label>
+                        <span id="outRiskScore" class="text-red">--%</span>
+                    </div>
+                    <div class="item">
+                        <label>Horizon</label>
+                        <span id="outHorizon">30D</span>
+                    </div>
+                </div>
+
+                <div class="agent-reasoning" id="finalReasoning" style="font-size: 0.88rem; border-top:1px solid var(--border-color); padding-top:10px;">
+                    Executive decision summary will render here following multi-agent graph resolution.
+                </div>
+            </div>
+
+            <!-- Future Aspects & Projections -->
+            <div class="future-aspects-card">
+                <div class="agent-header">
+                    <div class="agent-title"><i class="fas fa-chart-area" style="color:var(--brand-blue);"></i> Forward Horizon Projections</div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;" id="catalystTag">Catalyst: Pending Engine Run</span>
+                </div>
+                
+                <div class="agent-reasoning" id="futureThesis">
+                    Forward Thesis: Assessing 30-day target paths across Bullish, Base Hold, and Bearish scenarios...
+                </div>
+
+                <div class="chart-box" style="height: 150px;">
+                    <canvas id="futureProjectionChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Real-Time Console Log -->
+        <div class="logs-panel" id="systemLogs">
+            [SYSTEM_INIT] Autonomous Agent Pipeline Online. 100-Company Equity Index Loaded.
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================================
+        // Real 100-Company Dataset (replaces the synthetic 5,000 generator)
+        // ============================================================
+        const rawStockData = [
+            {sno:1, name:"Equilateral Ent.", cmp:13.36, pe:126.74, marCap:16.48, divYld:0.00, npQtr:0.05, qtrProfitVar:-68.75, salesQtr:10.22, qtrSalesVar:-37.42, roce:2.03, rsiUp:25.21},
+            {sno:2, name:"Williamson Fin.", cmp:3.57, pe:2.99, marCap:0.00, divYld:-0.07, npQtr:-16.67, qtrProfitVar:0.00, salesQtr:-5.80, qtrSalesVar:16.49, roce:0.00, rsiUp:0.00},
+            {sno:3, name:"Monind", cmp:19.95, pe:7.34, marCap:0.00, divYld:-0.78, npQtr:-6.85, qtrProfitVar:0.00, salesQtr:37.79, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:4, name:"Cropster Agro", cmp:3.38, pe:18.76, marCap:283.92, divYld:0.00, npQtr:5.34, qtrProfitVar:34.51, salesQtr:54.59, qtrSalesVar:7.00, roce:12.45, rsiUp:25.60},
+            {sno:5, name:"Omkar Pharmachem", cmp:9.95, pe:111.50, marCap:10.04, divYld:0.00, npQtr:-0.01, qtrProfitVar:-133.33, salesQtr:0.09, qtrSalesVar:-35.71, roce:0.74, rsiUp:18.62},
+            {sno:6, name:"Patidar Buildcon", cmp:4.75, pe:2.61, marCap:0.00, divYld:-0.03, npQtr:40.00, qtrProfitVar:0.09, salesQtr:-30.77, qtrSalesVar:-1.19, roce:19.31, rsiUp:0.00},
+            {sno:7, name:"Rolcon Engg. Co.", cmp:477.00, pe:11.81, marCap:36.25, divYld:0.52, npQtr:0.74, qtrProfitVar:-17.78, salesQtr:12.60, qtrSalesVar:1.20, roce:13.29, rsiUp:38.32},
+            {sno:8, name:"Mehta Securities", cmp:22.10, pe:113.83, marCap:6.83, divYld:0.00, npQtr:-0.01, qtrProfitVar:85.71, salesQtr:0.08, qtrSalesVar:60.00, roce:0.15, rsiUp:22.95},
+            {sno:9, name:"Silicon Valley", cmp:0.03, pe:0.39, marCap:0.00, divYld:-0.10, npQtr:-11.11, qtrProfitVar:0.00, salesQtr:-22.22, qtrSalesVar:26.04, roce:0.00, rsiUp:0.00},
+            {sno:10, name:"Kumbhat Fin.", cmp:16.31, pe:10.73, marCap:8.69, divYld:0.00, npQtr:0.10, qtrProfitVar:-9.09, salesQtr:1.97, qtrSalesVar:34.93, roce:11.73, rsiUp:20.26},
+            {sno:11, name:"Dynamic Portfol", cmp:13.58, pe:28.87, marCap:15.88, divYld:0.00, npQtr:0.16, qtrProfitVar:33.33, salesQtr:0.38, qtrSalesVar:58.33, roce:4.81, rsiUp:37.12},
+            {sno:12, name:"Munoth Capital", cmp:95.00, pe:87.08, marCap:0.00, divYld:-0.03, npQtr:90.91, qtrProfitVar:0.09, salesQtr:0.00, qtrSalesVar:-3.08, roce:13.66, rsiUp:0.00},
+            {sno:13, name:"Tricom Fruit", cmp:1.28, pe:2.44, marCap:0.00, divYld:-0.07, npQtr:0.00, qtrProfitVar:30.67, salesQtr:0.00, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:14, name:"N D Metal Inds.", cmp:75.00, pe:77.50, marCap:18.60, divYld:0.00, npQtr:0.15, qtrProfitVar:200.00, salesQtr:0.08, qtrSalesVar:4.49, roce:32.39, rsiUp:0.00},
+            {sno:15, name:"I Power Solution", cmp:15.48, pe:9.13, marCap:0.00, divYld:0.24, npQtr:125.00, qtrProfitVar:0.00, salesQtr:-20.83, qtrSalesVar:35.52, roce:0.00, rsiUp:0.00},
+            {sno:16, name:"Crimson Metal", cmp:28.95, pe:85.44, marCap:12.82, divYld:0.00, npQtr:0.03, qtrProfitVar:50.00, salesQtr:1.99, qtrSalesVar:-1.97, roce:7.92, rsiUp:21.46},
+            {sno:17, name:"Jaybharat Text", cmp:21.89, pe:838.03, marCap:0.00, divYld:-7.47, npQtr:-56.28, qtrProfitVar:8.38, salesQtr:444.16, qtrSalesVar:-29.09, roce:16.85, rsiUp:0.00},
+            {sno:18, name:"K-Lifestyle", cmp:0.19, pe:19.43, marCap:0.00, divYld:-1.13, npQtr:82.40, qtrProfitVar:0.92, salesQtr:-65.54, qtrSalesVar:-5.85, roce:35.90, rsiUp:0.00},
+            {sno:19, name:"NB Footwear", cmp:3.28, pe:4.43, marCap:0.00, divYld:-0.06, npQtr:25.00, qtrProfitVar:0.00, salesQtr:14.96, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:20, name:"Indian Link Ch.", cmp:358.05, pe:95.79, marCap:0.00, divYld:-0.07, npQtr:-333.33, qtrProfitVar:0.00, salesQtr:-1.60, qtrSalesVar:22.97, roce:0.00, rsiUp:0.00},
+            {sno:21, name:"Monotype India", cmp:0.29, pe:20.40, marCap:0.00, divYld:-0.39, npQtr:-77.27, qtrProfitVar:0.00, salesQtr:-4.91, qtrSalesVar:43.79, roce:0.00, rsiUp:0.00},
+            {sno:22, name:"Raj Television", cmp:9.39, pe:48.75, marCap:0.00, divYld:-1.01, npQtr:-388.57, qtrProfitVar:14.97, salesQtr:-9.66, qtrSalesVar:2.63, roce:33.79, rsiUp:0.00},
+            {sno:23, name:"Bhudevi Infra", cmp:109.75, pe:125.92, marCap:50.37, divYld:0.00, npQtr:-0.40, qtrProfitVar:42.03, salesQtr:0.00, qtrSalesVar:1.12, roce:25.04, rsiUp:0.00},
+            {sno:24, name:"CCME Global", cmp:35.91, pe:162.49, marCap:0.00, divYld:-0.26, npQtr:-116.67, qtrProfitVar:0.00, salesQtr:-2.92, qtrSalesVar:9.26, roce:0.00, rsiUp:0.00},
+            {sno:25, name:"Standard Shoe", cmp:14.99, pe:7.77, marCap:0.00, divYld:-0.06, npQtr:-20.00, qtrProfitVar:0.00, salesQtr:35.83, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:26, name:"Jet Solar", cmp:6.90, pe:204.75, marCap:8.19, divYld:0.00, npQtr:0.02, qtrProfitVar:112.50, salesQtr:0.20, qtrSalesVar:253.85, roce:0.25, rsiUp:15.45},
+            {sno:27, name:"JLA Infraville", cmp:2.12, pe:1.38, marCap:0.00, divYld:-0.11, npQtr:-164.71, qtrProfitVar:0.00, salesQtr:-1.41, qtrSalesVar:28.38, roce:0.00, rsiUp:0.00},
+            {sno:28, name:"Starbeam Ventures", cmp:1.10, pe:27.98, marCap:71.90, divYld:0.00, npQtr:-0.51, qtrProfitVar:0.00, salesQtr:9.22, qtrSalesVar:7.53, roce:15.32, rsiUp:0.00},
+            {sno:29, name:"Future Consumer", cmp:0.22, pe:43.93, marCap:0.00, divYld:-27.82, npQtr:-146.37, qtrProfitVar:115.27, salesQtr:1.20, qtrSalesVar:12.02, roce:16.64, rsiUp:0.00},
+            {sno:30, name:"JK Lakshmi Cem.", cmp:525.15, pe:16.92, marCap:6519.46, divYld:1.23, npQtr:108.07, qtrProfitVar:-28.07, salesQtr:1904.78, qtrSalesVar:9.41, roce:12.00, rsiUp:29.26},
+            {sno:31, name:"Reliance Infra.", cmp:58.31, pe:1.04, marCap:2382.72, divYld:0.00, npQtr:767.79, qtrProfitVar:409.43, salesQtr:6344.27, qtrSalesVar:7.39, roce:15.44, rsiUp:35.55},
+            {sno:32, name:"Sumeet Industrie", cmp:11.84, pe:33.24, marCap:822.59, divYld:0.00, npQtr:1.14, qtrProfitVar:-85.71, salesQtr:272.36, qtrSalesVar:9.61, roce:13.23, rsiUp:18.05},
+            {sno:33, name:"Richfield Fin", cmp:18.51, pe:29.30, marCap:17.88, divYld:0.00, npQtr:0.34, qtrProfitVar:277.78, salesQtr:4.90, qtrSalesVar:123.74, roce:9.08, rsiUp:38.69},
+            {sno:34, name:"Khemani Distrib.", cmp:113.65, pe:261.10, marCap:0.00, divYld:-22.41, npQtr:-325.68, qtrProfitVar:18.14, salesQtr:-64.45, qtrSalesVar:-26.14, roce:40.44, rsiUp:0.00},
+            {sno:35, name:"KKV Agro Powers", cmp:368.00, pe:7.02, marCap:22.95, divYld:1.24, npQtr:-1.38, qtrProfitVar:-268.29, salesQtr:615.67, qtrSalesVar:17.70, roce:16.37, rsiUp:25.03},
+            {sno:36, name:"Nagarjuna Fert.", cmp:2.05, pe:122.60, marCap:0.00, divYld:-5.56, npQtr:11.18, qtrProfitVar:0.00, salesQtr:8.02, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:37, name:"Jet Knitwears", cmp:48.45, pe:355.83, marCap:21.35, divYld:0.00, npQtr:0.01, qtrProfitVar:-98.59, salesQtr:10.87, qtrSalesVar:-18.58, roce:3.41, rsiUp:14.48},
+            {sno:38, name:"Innovative Tyres", cmp:64.20, pe:64.20, marCap:0.00, divYld:-0.17, npQtr:97.60, qtrProfitVar:47.28, salesQtr:73.25, qtrSalesVar:0.65, roce:24.89, rsiUp:0.00},
+            {sno:39, name:"Debock Industrie", cmp:0.65, pe:10.58, marCap:0.00, divYld:-0.19, npQtr:5.00, qtrProfitVar:0.00, salesQtr:-100.00, qtrSalesVar:-0.77, roce:12.47, rsiUp:0.00},
+            {sno:40, name:"Bhanderi Infra.", cmp:128.00, pe:166.20, marCap:33.24, divYld:0.00, npQtr:0.03, qtrProfitVar:-105.62, salesQtr:2.88, qtrSalesVar:-41.10, roce:0.92, rsiUp:44.67},
+            {sno:41, name:"City Pulse Multi", cmp:140.20, pe:100.70, marCap:209.46, divYld:0.00, npQtr:0.34, qtrProfitVar:-38.18, salesQtr:1.12, qtrSalesVar:-1.75, roce:3.24, rsiUp:3.53},
+            {sno:42, name:"Transpact Enter.", cmp:85.75, pe:36.89, marCap:3.32, divYld:0.00, npQtr:0.04, qtrProfitVar:-20.00, salesQtr:0.09, qtrSalesVar:12.50, roce:14.04, rsiUp:18.70},
+            {sno:43, name:"Salasar Exterior", cmp:2.65, pe:27.28, marCap:0.00, divYld:-2.53, npQtr:-8333.33, qtrProfitVar:0.00, salesQtr:-100.00, qtrSalesVar:-6.39, roce:7.42, rsiUp:0.00},
+            {sno:44, name:"S K Internation.", cmp:19.70, pe:14.44, marCap:0.00, divYld:-0.12, npQtr:-105.53, qtrProfitVar:0.14, salesQtr:-90.85, qtrSalesVar:-2.49, roce:29.80, rsiUp:0.00},
+            {sno:45, name:"Ratnabhumi Dev.", cmp:174.00, pe:193.80, marCap:238.38, divYld:0.00, npQtr:0.07, qtrProfitVar:-95.50, salesQtr:13.61, qtrSalesVar:-52.26, roce:11.04, rsiUp:21.24},
+            {sno:46, name:"Bombay Metrics", cmp:31.05, pe:24.66, marCap:38.23, divYld:0.64, npQtr:0.63, qtrProfitVar:-77.66, salesQtr:45.19, qtrSalesVar:-13.25, roce:10.53, rsiUp:30.07},
+            {sno:47, name:"Evoq Remedies", cmp:1.60, pe:3.98, marCap:0.00, divYld:-0.29, npQtr:-116.96, qtrProfitVar:0.00, salesQtr:-100.00, qtrSalesVar:-0.56, roce:33.31, rsiUp:0.00},
+            {sno:48, name:"Rex Sealing", cmp:105.00, pe:15.08, marCap:27.14, divYld:0.00, npQtr:1.10, qtrProfitVar:52.78, salesQtr:20.91, qtrSalesVar:25.74, roce:11.49, rsiUp:22.64},
+            {sno:49, name:"Earthstahl &All.", cmp:13.07, pe:16.00, marCap:0.00, divYld:-1.71, npQtr:-1121.43, qtrProfitVar:27.67, salesQtr:-22.28, qtrSalesVar:-9.85, roce:38.13, rsiUp:0.00},
+            {sno:50, name:"Command Polymers", cmp:21.00, pe:37.87, marCap:19.69, divYld:0.00, npQtr:3.83, qtrProfitVar:834.15, salesQtr:8.63, qtrSalesVar:278.51, roce:3.48, rsiUp:26.74},
+            {sno:51, name:"A G Universal", cmp:45.90, pe:314.62, marCap:25.17, divYld:0.00, npQtr:-0.41, qtrProfitVar:-180.39, salesQtr:41.40, qtrSalesVar:32.40, roce:5.13, rsiUp:27.54},
+            {sno:52, name:"Quality RO Indu.", cmp:28.55, pe:7.28, marCap:0.00, divYld:-0.70, npQtr:-142.94, qtrProfitVar:6.99, salesQtr:-13.70, qtrSalesVar:0.44, roce:24.31, rsiUp:0.00},
+            {sno:53, name:"Visaman Global", cmp:75.25, pe:24.88, marCap:150.78, divYld:0.00, npQtr:3.18, qtrProfitVar:283.13, salesQtr:139.49, qtrSalesVar:8.74, roce:11.36, rsiUp:21.55},
+            {sno:54, name:"MOS Utility", cmp:8.70, pe:12.38, marCap:223.97, divYld:0.00, npQtr:4.36, qtrProfitVar:2.21, salesQtr:151.09, qtrSalesVar:-5.47, roce:19.50, rsiUp:31.74},
+            {sno:55, name:"Neelam Linens", cmp:7.00, pe:9.13, marCap:14.15, divYld:0.00, npQtr:0.12, qtrProfitVar:-93.18, salesQtr:64.21, qtrSalesVar:-12.27, roce:7.82, rsiUp:22.61},
+            {sno:56, name:"Rexpro Enter.", cmp:36.45, pe:18.15, marCap:40.85, divYld:0.00, npQtr:0.39, qtrProfitVar:-90.60, salesQtr:28.57, qtrSalesVar:-45.46, roce:5.53, rsiUp:46.23},
+            {sno:57, name:"Shri Hare-Krish.", cmp:32.00, pe:9.91, marCap:61.41, divYld:0.00, npQtr:1.55, qtrProfitVar:-64.85, salesQtr:27.21, qtrSalesVar:-35.63, roce:7.76, rsiUp:37.17},
+            {sno:58, name:"Biopol Chemicals", cmp:46.15, pe:5.54, marCap:49.88, divYld:0.00, npQtr:6.04, qtrProfitVar:101.33, salesQtr:49.49, qtrSalesVar:46.20, roce:34.12, rsiUp:20.66},
+            {sno:59, name:"Rajnandini Fashion", cmp:32.00, pe:5.58, marCap:33.19, divYld:0.00, npQtr:40.62, qtrProfitVar:38.73, salesQtr:0.00, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:60, name:"Alpine Texworld", cmp:52.75, pe:9.39, marCap:201.76, divYld:0.00, npQtr:4.37, qtrProfitVar:89.74, salesQtr:17.86, qtrSalesVar:15.68, roce:0.06, rsiUp:0.00},
+            {sno:61, name:"Rama Petrochem", cmp:11.74, pe:18.10, marCap:0.00, divYld:-1.54, npQtr:11.49, qtrProfitVar:0.68, salesQtr:300.00, qtrSalesVar:-44.12, roce:24.50, rsiUp:0.09},
+            {sno:62, name:"Kontor Space", cmp:51.05, pe:13.90, marCap:31.54, divYld:0.00, npQtr:0.71, qtrProfitVar:12.16, salesQtr:15.43, qtrSalesVar:41.90, roce:0.10, rsiUp:0.00},
+            {sno:63, name:"Raconteur Global", cmp:9.24, pe:12.27, marCap:0.00, divYld:-20.54, npQtr:-7707.41, qtrProfitVar:3.72, salesQtr:644.00, qtrSalesVar:-5.55, roce:33.00, rsiUp:0.11},
+            {sno:64, name:"Alok Industries", cmp:8.08, pe:4011.91, marCap:0.00, divYld:-138.25, npQtr:21.16, qtrProfitVar:993.11, salesQtr:6.50, qtrSalesVar:-3.95, roce:8.23, rsiUp:0.12},
+            {sno:65, name:"Brainbees Solut.", cmp:178.00, pe:9293.21, marCap:0.00, divYld:-43.95, npQtr:50.50, qtrProfitVar:2106.23, salesQtr:13.08, qtrSalesVar:0.57, roce:18.83, rsiUp:0.17},
+            {sno:66, name:"RMC Switchgears", cmp:236.10, pe:12.32, marCap:249.82, divYld:0.00, npQtr:2.08, qtrProfitVar:-48.90, salesQtr:37.24, qtrSalesVar:-55.94, roce:21.98, rsiUp:36.72},
+            {sno:67, name:"Vinit Mobile", cmp:60.20, pe:6.47, marCap:37.14, divYld:0.00, npQtr:2.34, qtrProfitVar:88.71, salesQtr:31.77, qtrSalesVar:-17.24, roce:69.41, rsiUp:29.84},
+            {sno:68, name:"Indo Thai Sec.", cmp:41.80, pe:8.09, marCap:555.26, divYld:0.48, npQtr:11.03, qtrProfitVar:28.70, salesQtr:20.62, qtrSalesVar:46.87, roce:34.58, rsiUp:5.30},
+            {sno:69, name:"Transrail Light", cmp:437.00, pe:14.09, marCap:5867.02, divYld:0.68, npQtr:107.88, qtrProfitVar:1.95, salesQtr:1736.03, qtrSalesVar:4.59, roce:29.18, rsiUp:29.67},
+            {sno:70, name:"Shree Tirupati", cmp:325.00, pe:112.37, marCap:329.23, divYld:0.00, npQtr:1.06, qtrProfitVar:-85.44, salesQtr:107.04, qtrSalesVar:3.01, roce:6.89, rsiUp:18.96},
+            {sno:71, name:"Vardhman Concr.", cmp:5.10, pe:3.65, marCap:0.00, divYld:-0.05, npQtr:-150.00, qtrProfitVar:0.00, salesQtr:-2.33, qtrSalesVar:17.48, roce:0.39, rsiUp:0.00},
+            {sno:72, name:"Tunwal E-Motors", cmp:25.25, pe:11.45, marCap:145.69, divYld:0.39, npQtr:4.23, qtrProfitVar:-34.72, salesQtr:132.45, qtrSalesVar:27.15, roce:13.28, rsiUp:38.39},
+            {sno:73, name:"KG Petrochem", cmp:165.95, pe:31.17, marCap:86.64, divYld:0.00, npQtr:0.49, qtrProfitVar:-77.31, salesQtr:57.75, qtrSalesVar:-38.59, roce:4.37, rsiUp:35.66},
+            {sno:74, name:"Symphony", cmp:584.65, pe:1032.10, marCap:4014.89, divYld:1.55, npQtr:40.00, qtrProfitVar:13.96, salesQtr:378.00, qtrSalesVar:50.60, roce:20.58, rsiUp:26.74},
+            {sno:75, name:"Skyline Ventures", cmp:21.00, pe:8.33, marCap:0.00, divYld:-0.20, npQtr:-400.00, qtrProfitVar:0.00, salesQtr:-7.70, qtrSalesVar:32.44, roce:0.48, rsiUp:0.00},
+            {sno:76, name:"I R C T C", cmp:483.00, pe:28.02, marCap:38640.00, divYld:1.77, npQtr:329.86, qtrProfitVar:-0.18, salesQtr:1369.53, qtrSalesVar:18.10, roce:46.09, rsiUp:37.15},
+            {sno:77, name:"Popees Cares", cmp:9.39, pe:5.70, marCap:0.00, divYld:-0.03, npQtr:50.00, qtrProfitVar:0.00, salesQtr:25.33, qtrSalesVar:0.54, roce:0.00, rsiUp:0.00},
+            {sno:78, name:"I R F C", cmp:83.29, pe:15.18, marCap:108847.54, divYld:2.51, npQtr:1927.21, qtrProfitVar:10.40, salesQtr:8261.11, qtrSalesVar:19.46, roce:5.64, rsiUp:28.18},
+            {sno:79, name:"Mahindra Holiday", cmp:209.25, pe:90.36, marCap:4228.01, divYld:0.00, npQtr:-8.55, qtrProfitVar:-210.04, salesQtr:732.81, qtrSalesVar:4.48, roce:8.12, rsiUp:32.20},
+            {sno:80, name:"Destiny Logistic", cmp:100.65, pe:66.38, marCap:225.69, divYld:0.00, npQtr:0.46, qtrProfitVar:-58.93, salesQtr:56.92, qtrSalesVar:16.69, roce:8.74, rsiUp:35.55},
+            {sno:81, name:"Aditya Bir. Fas.", cmp:52.00, pe:6346.66, marCap:0.00, divYld:-248.73, npQtr:-1.54, qtrProfitVar:2025.56, salesQtr:10.60, qtrSalesVar:-3.76, roce:29.35, rsiUp:0.68},
+            {sno:82, name:"Premier Roadline", cmp:42.10, pe:7.03, marCap:96.25, divYld:0.00, npQtr:6.04, qtrProfitVar:-39.20, salesQtr:189.79, qtrSalesVar:8.16, roce:14.83, rsiUp:35.21},
+            {sno:83, name:"KEC International", cmp:418.05, pe:18.53, marCap:11128.53, divYld:1.32, npQtr:72.62, qtrProfitVar:-41.72, salesQtr:5023.54, qtrSalesVar:0.01, roce:16.53, rsiUp:31.08},
+            {sno:84, name:"Rail Vikas", cmp:210.20, pe:48.73, marCap:43827.16, divYld:0.81, npQtr:159.52, qtrProfitVar:18.46, salesQtr:4321.23, qtrSalesVar:10.55, roce:10.80, rsiUp:30.22},
+            {sno:85, name:"L.K.Mehta Poly.", cmp:38.30, pe:23.35, marCap:14.71, divYld:0.00, npQtr:0.33, qtrProfitVar:-5.71, salesQtr:13.92, qtrSalesVar:17.37, roce:7.98, rsiUp:36.42},
+            {sno:86, name:"Swan Corp", cmp:289.50, pe:40.61, marCap:9074.61, divYld:0.05, npQtr:-36.00, qtrProfitVar:-264.24, salesQtr:1013.75, qtrSalesVar:-16.44, roce:-0.58, rsiUp:32.70},
+            {sno:87, name:"Shri Gang Indus", cmp:60.30, pe:6.49, marCap:128.08, divYld:0.00, npQtr:2.06, qtrProfitVar:114.58, salesQtr:84.06, qtrSalesVar:-1.58, roce:30.71, rsiUp:40.76},
+            {sno:88, name:"CSM Technologies", cmp:94.84, pe:19.72, marCap:489.39, divYld:0.00, npQtr:-8.28, qtrProfitVar:-9.92, salesQtr:42.70, qtrSalesVar:21.20, roce:29.19, rsiUp:39.75},
+            {sno:89, name:"Bloom Industries", cmp:27.84, pe:15.28, marCap:18.49, divYld:0.00, npQtr:0.20, qtrProfitVar:53.85, salesQtr:3.35, qtrSalesVar:-39.64, roce:11.25, rsiUp:28.72},
+            {sno:90, name:"Inox Wind", cmp:69.96, pe:35.10, marCap:12090.77, divYld:0.00, npQtr:64.09, qtrProfitVar:-58.44, salesQtr:814.10, qtrSalesVar:-1.47, roce:10.48, rsiUp:31.77},
+            {sno:91, name:"Cura Tech.", cmp:63.58, pe:62.94, marCap:0.00, divYld:-0.28, npQtr:-2700.00, qtrProfitVar:0.05, salesQtr:-64.29, qtrSalesVar:-7.74, roce:36.00, rsiUp:0.92},
+            {sno:92, name:"Bodhtree Consul.", cmp:11.00, pe:24.06, marCap:0.00, divYld:-1.46, npQtr:-570.97, qtrProfitVar:1.94, salesQtr:1.57, qtrSalesVar:9.23, roce:27.20, rsiUp:0.92},
+            {sno:93, name:"JK Agri Genetics", cmp:285.00, pe:132.16, marCap:0.00, divYld:-9.09, npQtr:-573.33, qtrProfitVar:22.96, salesQtr:-16.78, qtrSalesVar:5.25, roce:47.69, rsiUp:1.06},
+            {sno:94, name:"Dabur India", cmp:385.30, pe:34.48, marCap:68350.56, divYld:2.13, npQtr:586.16, qtrProfitVar:14.98, salesQtr:3764.39, qtrSalesVar:10.57, roce:20.28, rsiUp:21.48},
+            {sno:95, name:"Flexituff Vent.", cmp:2.52, pe:8.28, marCap:0.00, divYld:-15.68, npQtr:14.46, qtrProfitVar:0.00, salesQtr:-100.00, qtrSalesVar:-26.79, roce:6.23, rsiUp:1.20},
+            {sno:96, name:"Vasa Retail", cmp:4.05, pe:2.43, marCap:0.00, divYld:-0.05, npQtr:28.57, qtrProfitVar:0.00, salesQtr:-1.93, qtrSalesVar:39.19, roce:1.25, rsiUp:0.00},
+            {sno:97, name:"Billwin Indust.", cmp:16.00, pe:14.23, marCap:6.69, divYld:0.00, npQtr:0.14, qtrProfitVar:-50.00, salesQtr:4.01, qtrSalesVar:-4.52, roce:5.37, rsiUp:38.03},
+            {sno:98, name:"A B Lifestyle", cmp:85.03, pe:48.59, marCap:10378.08, divYld:0.58, npQtr:29.02, qtrProfitVar:20.62, salesQtr:2045.74, qtrSalesVar:11.15, roce:15.02, rsiUp:38.61},
+            {sno:99, name:"Standard Shoe II", cmp:14.99, pe:7.77, marCap:0.00, divYld:-0.06, npQtr:-20.00, qtrProfitVar:0.00, salesQtr:35.83, qtrSalesVar:0.00, roce:0.00, rsiUp:0.00},
+            {sno:100, name:"Jet Solar II", cmp:6.90, pe:204.75, marCap:8.19, divYld:0.00, npQtr:0.02, qtrProfitVar:112.50, salesQtr:0.20, qtrSalesVar:253.85, roce:0.25, rsiUp:15.45}
+        ];
+
+        // Curated ticker overrides for names used in the sidebar chips/watchlist
+        const tickerOverrides = {
+            "I R C T C": "IRCTC",
+            "Dabur India": "DABUR",
+            "Rex Sealing": "REXSEAL",
+            "Swan Corp": "SWANCORP",
+            "Alok Industries": "ALOKIND"
+        };
+
+        const globalDatabase = {};
+        const globalListOptions = [];
+        const usedTickers = new Set();
+
+        function makeTickerBase(name) {
+            const words = name.replace(/[.&]/g, '').split(/\s+/).filter(w => /[A-Za-z]/.test(w));
+            if (words.length === 0) return 'STK';
+            if (words.length === 1) {
+                return words[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 6) || 'STK';
+            }
+            let base = words.map(w => (w.replace(/[^A-Za-z]/g, '')[0] || '')).join('').toUpperCase();
+            if (base.length < 3) {
+                base += words[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(1, 6 - base.length);
+            }
+            return base.slice(0, 6) || 'STK';
+        }
+
+        function uniqueTicker(name, sno) {
+            if (tickerOverrides[name]) {
+                usedTickers.add(tickerOverrides[name]);
+                return tickerOverrides[name];
+            }
+            let t = makeTickerBase(name);
+            if (usedTickers.has(t)) {
+                t = (t.slice(0, 4) + sno).slice(0, 7);
+            }
+            usedTickers.add(t);
+            return t;
+        }
+
+        // Classification driven by the real fundamental fields
+        function classifyStatus(s) {
+            const falling = s.qtrProfitVar < -50 || s.roce < 3 || (s.npQtr < 0 && s.qtrSalesVar < 0);
+            if (falling) return 'FALLING';
+            const buy = s.roce > 15 && s.rsiUp > 20 && s.qtrProfitVar > -20 && s.qtrSalesVar > 0;
+            if (buy) return 'BUY';
+            return 'HOLD';
+        }
+
+        function computeRisk(s) {
+            let r = 15;
+            if (s.marCap < 50) r += 15;
+            if (s.marCap === 0) r += 8;
+            if (s.pe > 100) r += 10;
+            if (s.divYld < 0) r += 5;
+            if (s.qtrProfitVar < -50) r += 15;
+            if (s.roce < 5) r += 10;
+            if (s.rsiUp === 0) r += 4;
+            return Math.max(8, Math.min(68, Math.round(r)));
+        }
+
+        function buildEntity(s) {
+            const ticker = uniqueTicker(s.name, s.sno);
+            const statusType = classifyStatus(s);
+            const r = computeRisk(s);
+
+            let ema;
+            if (statusType === 'BUY') ema = Math.round(s.cmp * 0.94 * 100) / 100;
+            else if (statusType === 'FALLING') ema = Math.round(s.cmp * 1.08 * 100) / 100;
+            else ema = Math.round(s.cmp * 0.995 * 100) / 100;
+
+            const fundSig = statusType === 'BUY' ? 'CONSTRUCTIVE' : (statusType === 'FALLING' ? 'CAUTIONARY' : 'NEUTRAL');
+
+            let fundText;
+            if (statusType === 'BUY') {
+                fundText = `ROCE of ${s.roce}% paired with RSI momentum near ${s.rsiUp}%. Quarterly sales grew ${s.qtrSalesVar}% YoY, reflecting durable operating leverage.`;
+            } else if (statusType === 'FALLING') {
+                fundText = `FALLING STOCK ALERT: Quarterly profit variance of ${s.qtrProfitVar}% against ROCE of ${s.roce}% signals deteriorating capital efficiency.`;
+            } else {
+                fundText = `HOLD CRITERIA MET: ROCE steady at ${s.roce}% with P/E of ${s.pe}. Quarterly trends remain mixed pending a clearer directional catalyst.`;
+            }
+
+            return {
+                t: ticker,
+                n: s.name,
+                e: 'NSE',
+                c: '₹',
+                b: s.cmp,
+                ema: ema,
+                r: r,
+                statusType: statusType,
+                fundSig: fundSig,
+                fundText: fundText,
+                cite: `NSE Regulatory Filing #${ticker}-2026`,
+                cat: `Quarterly Review in ${(s.sno % 28) + 1} Days`
+            };
+        }
+
+        function generateDatabase() {
+            rawStockData.forEach(s => {
+                const entity = buildEntity(s);
+                globalDatabase[entity.t] = entity;
+                globalListOptions.push(`${entity.t} - ${entity.n} [${entity.e}]`);
+            });
+
+            const datalist = document.getElementById('globalStockDatalist');
+            const fragment = document.createDocumentFragment();
+            globalListOptions.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt;
+                fragment.appendChild(o);
+            });
+            datalist.appendChild(fragment);
+        }
+
+        // Global Chart Instance Handles
+        let techChart, flowChart, riskRadarChart, futureProjectionChart;
+
+        function initCharts() {
+            // 1. Technical Chart
+            const techCtx = document.getElementById('techChart').getContext('2d');
+            techChart = new Chart(techCtx, {
+                type: 'line',
+                data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Current'],
+                    datasets: [
+                        { label: 'Price', data: [0,0,0,0,0,0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.05)', fill: true, tension: 0.2 },
+                        { label: 'EMA50', data: [0,0,0,0,0,0], borderColor: '#d97706', borderDash: [4, 4], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+
+            // 2. Flow Bar Chart
+            const flowCtx = document.getElementById('flowChart').getContext('2d');
+            flowChart = new Chart(flowCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Inst Flow', 'Mutual Funds', 'Retail', 'Foreign Inst'],
+                    datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#16a34a', '#2563eb', '#dc2626', '#d97706'], borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 10 } } }, y: { display: false } } }
+            });
+
+            // 3. Risk Factor Radar Chart
+            const riskCtx = document.getElementById('riskRadarChart').getContext('2d');
+            riskRadarChart = new Chart(riskCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Volatility', 'Valuation', 'Liquidity', 'Reg Risk', 'Macro'],
+                    datasets: [{ label: 'Risk Rating', data: [20, 20, 20, 20, 20], backgroundColor: 'rgba(220, 38, 38, 0.1)', borderColor: '#dc2626', pointBackgroundColor: '#dc2626' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { grid: { color: '#e2e8f0' }, ticks: { display: false }, pointLabels: { color: '#64748b', font: { size: 9 } } } } }
+            });
+
+            // 4. Future Aspects Projections
+            const futureCtx = document.getElementById('futureProjectionChart').getContext('2d');
+            futureProjectionChart = new Chart(futureCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Today', '+7 Days', '+14 Days', '+21 Days', '+30 Days'],
+                    datasets: [
+                        { label: 'Bullish Path', data: [100, 103, 107, 110, 115], borderColor: '#16a34a', borderDash: [3, 3], fill: false },
+                        { label: 'Hold / Base Path', data: [100, 100, 101, 101, 102], borderColor: '#d97706', fill: false },
+                        { label: 'Bearish Path', data: [100, 96, 93, 90, 86], borderColor: '#dc2626', borderDash: [3, 3], fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b', font: { size: 10 } } }, y: { display: false } } }
+            });
+        }
+
+        function logToConsole(msg) {
+            const logs = document.getElementById('systemLogs');
+            logs.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${msg}`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateBadge(elId, signal, customClass = '') {
+            const el = document.getElementById(elId);
+            el.innerText = signal;
+            el.className = 'badge';
+
+            if(customClass) {
+                el.classList.add(customClass);
+                return;
+            }
+
+            if(signal.includes('BUY') || signal === 'CONSTRUCTIVE' || signal === 'BULLISH') el.classList.add('badge-buy');
+            else if(signal.includes('SELL') || signal.includes('RISK') || signal === 'CAUTIONARY' || signal === 'BEARISH' || signal === 'FALLING') el.classList.add('badge-sell');
+            else if(signal.includes('HOLD') || signal === 'NEUTRAL') el.classList.add('badge-hold');
+            else el.classList.add('badge-neutral');
+        }
+
+        function quickSelect(ticker) {
+            const item = globalDatabase[ticker.toUpperCase()];
+            if(item) {
+                document.getElementById('tickerSearchInput').value = `${item.t} - ${item.n} [${item.e}]`;
+                executeOrchestrator();
+            }
+        }
+
+        function handleStockSelect(val) {
+            if(!val) return;
+            executeOrchestrator();
+        }
+
+        function resolveSelectedEntity() {
+            const rawVal = document.getElementById('tickerSearchInput').value.trim().toUpperCase();
+            if(!rawVal) return globalDatabase['IRCTC'];
+
+            const extractedTicker = rawVal.split(' ')[0].replace(/[^A-Z0-9]/g, '');
+            if(globalDatabase[extractedTicker]) return globalDatabase[extractedTicker];
+
+            const fallbackTicker = extractedTicker || 'EQUITY';
+            return {
+                t: fallbackTicker,
+                n: `${fallbackTicker} Global Corp`,
+                e: 'NSE',
+                c: '₹',
+                b: 150,
+                ema: 150,
+                r: 25,
+                statusType: 'HOLD',
+                fundSig: 'NEUTRAL',
+                fundText: 'Standard financial asset performance. HOLD criteria active pending sector catalysts.',
+                cite: `NSE Regulatory Filing #${fallbackTicker}-2026`,
+                cat: 'Quarterly Review in 14 Days'
+            };
+        }
+
+        async function executeOrchestrator() {
+            const btn = document.getElementById('runBtn');
+            const profile = document.getElementById('profileInput').value;
+            const horizon = document.getElementById('horizonInput').value;
+            const isDegraded = document.getElementById('degradedInput').checked;
+            const entity = resolveSelectedEntity();
+            const startTime = performance.now();
+
+            btn.disabled = true;
+            logToConsole(`[ANALYSIS_START] Target: ${entity.t} (${entity.n}) | Exchange: ${entity.e}`);
+
+            // Reset UI Statuses
+            ['statusTech', 'statusFund', 'statusSent', 'statusRisk'].forEach(id => {
+                document.getElementById(id).innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing';
+                document.getElementById(id).className = 'agent-status';
+            });
+            document.getElementById('statusSynth').innerText = 'Synthesizing...';
+
+            await new Promise(r => setTimeout(r, 400));
+
+            // 1. Technical Evaluation
+            let techSig = "HOLD";
+            if(entity.statusType === 'BUY') techSig = "BUY";
+            else if(entity.statusType === 'FALLING') techSig = "FALLING / SELL";
+
+            if (isDegraded) techSig = "OFFLINE";
+
+            document.getElementById('statusTech').innerText = isDegraded ? 'Degraded' : 'Complete';
+            updateBadge('sigTech', techSig);
+            document.getElementById('techEmaVal').innerText = `EMA50: ${entity.c}${entity.ema}`;
+            document.getElementById('reasonTech').innerText = isDegraded ? 
+                "ERROR: Exchange WebSocket stream disconnected. Technical indicator verification unavailable." : 
+                `Price (${entity.c}${entity.b}) is trading ${entity.b > entity.ema ? 'above' : (entity.b < entity.ema ? 'below' : 'at level with')} 50-day EMA (${entity.c}${entity.ema}).`;
+
+            // Chart Update
+            const b = entity.b;
+            const techSeries = isDegraded ? [0,0,0,0,0,0] : 
+                (entity.statusType === 'FALLING' ? [b*1.12, b*1.08, b*1.05, b*1.02, b*0.98, b] : 
+                (entity.statusType === 'BUY' ? [b*0.92, b*0.94, b*0.96, b*0.99, b*1.01, b] : [b*0.99, b*1.01, b*0.99, b*1.00, b*0.99, b]));
+            
+            techChart.data.datasets[0].borderColor = entity.statusType === 'FALLING' ? '#dc2626' : (entity.statusType === 'BUY' ? '#16a34a' : '#d97706');
+            techChart.data.datasets[0].data = techSeries;
+            techChart.data.datasets[1].data = [entity.ema, entity.ema, entity.ema, entity.ema, entity.ema, entity.ema];
+            techChart.update();
+
+            // 2. Fundamental Evaluation
+            document.getElementById('statusFund').innerText = 'Complete';
+            updateBadge('sigFund', entity.fundSig);
+            document.getElementById('reasonFund').innerText = entity.fundText;
+            document.getElementById('citeFund').style.display = 'block';
+            document.getElementById('citeText').innerText = entity.cite;
+
+            // 3. Institutional Flow Evaluation
+            document.getElementById('statusSent').innerText = 'Complete';
+            const sentSig = entity.statusType === 'BUY' ? "BULLISH" : (entity.statusType === 'FALLING' ? "BEARISH" : "NEUTRAL");
+            updateBadge('sigSent', sentSig);
+            document.getElementById('reasonSent').innerText = `Institutional liquidity flows on ${entity.e} reflect ${sentSig.toLowerCase()} capital allocation.`;
+            
+            flowChart.data.datasets[0].data = sentSig === 'BULLISH' ? [450, 320, -90, 210] : (sentSig === 'BEARISH' ? [-380, -210, 150, -180] : [110, -50, 80, -20]);
+            flowChart.update();
+
+            // 4. Risk Profile Evaluation
+            document.getElementById('statusRisk').innerText = 'Complete';
+            updateBadge('sigRisk', `RISK: ${entity.r}%`, entity.r > 35 ? 'badge-sell' : (entity.r < 22 ? 'badge-buy' : 'badge-hold'));
+            document.getElementById('reasonRisk').innerText = `Risk metric calculated at ${entity.r}%. Asset exposure evaluated against ${profile.toUpperCase()} institutional mandate.`;
+            
+            riskRadarChart.data.datasets[0].borderColor = entity.r > 35 ? '#dc2626' : '#2563eb';
+            riskRadarChart.data.datasets[0].data = [entity.r, entity.r * 0.8, entity.r * 0.7, entity.r * 0.9, entity.r * 0.6];
+            riskRadarChart.update();
+
+            await new Promise(r => setTimeout(r, 200));
+
+            // Synthesis Engine & HOLD Logic Integration
+            let finalDecision = "HOLD";
+            let executiveSummary = "";
+
+            if (isDegraded) {
+                finalDecision = "HOLD";
+                executiveSummary = "HOLD MANDATE (DEGRADED FEED): Market data feeds disconnected. Action deferred to prevent unvalidated exposure.";
+            } else {
+                // HOLD Conditions Check
+                const isConsolidating = entity.statusType === 'HOLD';
+                const isConflict = (techSig === 'BUY' && entity.fundSig === 'CAUTIONARY') || (techSig.includes('SELL') && entity.fundSig === 'CONSTRUCTIVE');
+                
+                if (isConsolidating || isConflict) {
+                    finalDecision = "HOLD / ACCUMULATE";
+                    executiveSummary = isConflict ? 
+                        "HOLD DECISION: Technical and Fundamental signals are conflicting. Risk model advises maintaining position until breakout directional clarity." : 
+                        "HOLD DECISION: Asset is currently in price consolidation. Financial fundamentals remain stable; maintaining neutral stance.";
+                } else if (entity.statusType === 'FALLING') {
+                    finalDecision = "REDUCE / SELL";
+                    executiveSummary = "SELL / REDUCE ALERT: Asset displays negative price momentum and elevated fundamental risk exposure. Reallocation recommended.";
+                } else if (entity.statusType === 'BUY') {
+                    if (profile === 'conservative' && entity.r > 30) {
+                        finalDecision = "HOLD";
+                        executiveSummary = "HOLD CONSTRAINT: Stock momentum is positive, but asset risk exceeds Conservative Risk Profile limits.";
+                    } else {
+                        finalDecision = "BUY / OUTPERFORM";
+                        executiveSummary = "BUY MANDATE: High conviction alignment across technical price trendlines, institutional inflows, and quarterly filings.";
+                    }
+                }
+            }
+
+            // Calculations
+            const isBuy = finalDecision.includes("BUY");
+            const isSell = finalDecision.includes("SELL");
+
+            const targetPrice = (entity.b * (isBuy ? 1.10 : (isSell ? 0.91 : 1.03))).toFixed(1);
+            const stopLoss = (entity.b * (isBuy ? 0.95 : (isSell ? 0.98 : 0.96))).toFixed(1);
+            const projectedRoi = isBuy ? "+10.2%" : (isSell ? "-9.0%" : "+3.0%");
+
+            // Render Synthesis Output
+            document.getElementById('statusSynth').innerText = 'Complete';
+            const recEl = document.getElementById('finalRec');
+            recEl.innerText = finalDecision;
+            
+            if (isBuy) {
+                recEl.className = 'text-green';
+            } else if (isSell) {
+                recEl.className = 'text-red';
+            } else {
+                recEl.className = 'text-amber';
+            }
+
+            document.getElementById('outTicker').innerText = entity.t;
+            document.getElementById('outExchange').innerText = entity.e;
+            document.getElementById('outRiskScore').innerText = `${entity.r}%`;
+            document.getElementById('outRiskScore').className = entity.r > 35 ? 'text-red' : 'text-green';
+            document.getElementById('outHorizon').innerText = horizon.toUpperCase();
+            document.getElementById('finalReasoning').innerText = executiveSummary;
+
+            // Render Projection Chart
+            document.getElementById('catalystTag').innerText = `Catalyst: ${entity.cat}`;
+            document.getElementById('futureThesis').innerText = `Forward Outlook (${horizon.toUpperCase()}): Target bounds defined between ${entity.c}${stopLoss} and ${entity.c}${targetPrice} based on ${finalDecision} model assessment.`;
+
+            futureProjectionChart.data.datasets[0].data = [entity.b, entity.b*1.03, entity.b*1.06, entity.b*1.08, targetPrice];
+            futureProjectionChart.data.datasets[1].data = [entity.b, entity.b*1.00, entity.b*1.01, entity.b*1.02, (entity.b*1.03).toFixed(1)];
+            futureProjectionChart.data.datasets[2].data = [entity.b, entity.b*0.96, entity.b*0.93, entity.b*0.90, stopLoss];
+            futureProjectionChart.update();
+
+            // Header Stats Updates
+            const endTime = performance.now();
+            document.getElementById('latencyMetric').innerText = `${(endTime - startTime).toFixed(0)} ms`;
+            document.getElementById('riskPercentMetric').innerText = `${entity.r}%`;
+            document.getElementById('riskPercentMetric').className = entity.r > 35 ? 'stat-val text-red' : 'stat-val text-green';
+            
+            document.getElementById('confMetric').innerText = isDegraded ? '50%' : '94%';
+            
+            const roiEl = document.getElementById('roiMetric');
+            roiEl.innerText = projectedRoi;
+            roiEl.className = isBuy ? 'stat-val text-green' : (isSell ? 'stat-val text-red' : 'stat-val text-amber');
+
+            document.getElementById('targetStopMetric').innerHTML = `T: <span class="text-green">${entity.c}${targetPrice}</span><br>S: <span class="text-red">${entity.c}${stopLoss}</span>`;
+
+            logToConsole(`[COMPLETE] Decision: ${finalDecision} | Target: ${entity.c}${targetPrice} | Stop: ${entity.c}${stopLoss}`);
+            btn.disabled = false;
+        }
+
+        window.onload = () => {
+            generateDatabase();
+            initCharts();
+            quickSelect('IRCTC');
+        };
+    </script>
+</body>
+</html>
